@@ -12,13 +12,13 @@ const toDTO = (model) => {
     raisedById: model.raisedById,
     raisedBy: model.raisedBy ? {
       id: model.raisedBy.id,
-      name: model.raisedBy.name,
+      name: model.raisedBy.name || `${model.raisedBy.firstName || ''} ${model.raisedBy.lastName || ''}`.trim(),
       email: model.raisedBy.email,
     } : null,
     approvedById: model.approvedById,
     approvedBy: model.approvedBy ? {
       id: model.approvedBy.id,
-      name: model.approvedBy.name,
+      name: model.approvedBy.name || `${model.approvedBy.firstName || ''} ${model.approvedBy.lastName || ''}`.trim(),
       email: model.approvedBy.email,
     } : null,
     technicianId: model.technicianId,

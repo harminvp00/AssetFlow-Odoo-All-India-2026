@@ -23,10 +23,10 @@ const findMaintenanceRequestById = async (id, tx) => {
     include: {
       asset: true,
       raisedBy: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
       approvedBy: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
   });
@@ -56,10 +56,10 @@ const findMaintenanceRequests = async (filters = {}, tx) => {
     include: {
       asset: true,
       raisedBy: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
       approvedBy: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
     orderBy: {
@@ -75,7 +75,7 @@ const findPendingRequests = async (tx) => {
     include: {
       asset: true,
       raisedBy: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
     orderBy: {
@@ -103,10 +103,10 @@ const findMaintenanceHistoryByAssetId = async (assetId, tx) => {
     include: {
       asset: true,
       raisedBy: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
       approvedBy: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
     orderBy: {

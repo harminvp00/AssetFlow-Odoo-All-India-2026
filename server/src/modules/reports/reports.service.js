@@ -1,14 +1,27 @@
 const repository = require('./reports.repository');
 
-const getAll = async () => {
-  return repository.findAll();
+const getUtilization = async () => {
+  return repository.getDepartmentUtilization();
 };
 
-const create = async (data) => {
-  return repository.save(data);
+const getMaintenance = async () => {
+  return repository.getMaintenanceStats();
+};
+
+const getSummary = async () => {
+  const kpis = await repository.getSummaryKPIs();
+  const mostUsed = await repository.getMostUsedAssets();
+  const idle = await repository.getIdleAssets();
+
+  return {
+    kpis,
+    mostUsed,
+    idle,
+  };
 };
 
 module.exports = {
-  getAll,
-  create,
+  getUtilization,
+  getMaintenance,
+  getSummary,
 };

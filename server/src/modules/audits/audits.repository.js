@@ -22,7 +22,7 @@ const createAuditCycle = async (data, tx) => {
     },
     include: {
       auditors: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
   });
@@ -34,14 +34,14 @@ const findAuditCycleById = async (id, tx) => {
     where: { id },
     include: {
       auditors: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
       scopeDepartment: true,
       scopeLocation: true,
       records: {
         include: {
           asset: true,
-          auditor: { select: { id: true, name: true } },
+          auditor: { select: { id: true, firstName: true, lastName: true } },
         },
       },
     },
@@ -58,7 +58,7 @@ const findAuditCycles = async (filters = {}, tx) => {
     where,
     include: {
       auditors: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
       scopeDepartment: true,
       scopeLocation: true,
@@ -87,7 +87,7 @@ const updateAuditCycle = async (id, data, tx) => {
     data: updateData,
     include: {
       auditors: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
   });
@@ -104,7 +104,7 @@ const assignAuditors = async (id, auditorIds, tx) => {
     },
     include: {
       auditors: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
   });
@@ -123,7 +123,7 @@ const createAuditRecord = async (data, tx) => {
     include: {
       asset: true,
       auditor: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
   });
@@ -136,7 +136,7 @@ const findAuditRecordById = async (id, tx) => {
     include: {
       asset: true,
       auditor: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
   });
@@ -150,7 +150,7 @@ const updateAuditRecord = async (id, data, tx) => {
     include: {
       asset: true,
       auditor: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
   });
@@ -173,7 +173,7 @@ const findAuditRecords = async (filters = {}, tx) => {
     include: {
       asset: true,
       auditor: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
     orderBy: {
@@ -235,7 +235,7 @@ const findAuditHistoryByAssetId = async (assetId, tx) => {
     include: {
       auditCycle: true,
       auditor: {
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
     orderBy: {

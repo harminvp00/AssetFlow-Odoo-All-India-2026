@@ -18,7 +18,7 @@ const toDTO = (model) => {
     status: model.status,
     auditors: model.auditors ? model.auditors.map(a => ({
       id: a.id,
-      name: a.name,
+      name: a.name || `${a.firstName || ''} ${a.lastName || ''}`.trim(),
       email: a.email,
     })) : [],
     records: model.records ? model.records.map(r => ({
@@ -33,7 +33,7 @@ const toDTO = (model) => {
       auditorId: r.auditorId,
       auditor: r.auditor ? {
         id: r.auditor.id,
-        name: r.auditor.name,
+        name: r.auditor.name || `${r.auditor.firstName || ''} ${r.auditor.lastName || ''}`.trim(),
       } : null,
       status: r.status,
       notes: r.notes,

@@ -1,13 +1,17 @@
 const { prisma } = require('../../config/database');
 
 const findAll = async () => {
-  // Placeholder database operation. Returns empty array by default.
-  return [];
+  return prisma.user.findMany({
+    include: {
+      departments: true
+    }
+  });
 };
 
 const save = async (data) => {
-  // Placeholder save operation.
-  return data;
+  return prisma.user.create({
+    data
+  });
 };
 
 module.exports = {

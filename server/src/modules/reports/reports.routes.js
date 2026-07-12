@@ -1,11 +1,11 @@
 const express = require('express');
 const controller = require('./reports.controller');
-const validationMiddleware = require('../../middlewares/validation.middleware');
-const validation = require('./reports.validation');
+const authMiddleware = require('../../middlewares/auth.middleware');
 
 const router = express.Router();
 
-router.get('/', controller.getAll);
-router.post('/', validationMiddleware(validation.create), controller.create);
+router.get('/summary', authMiddleware, controller.getSummary);
+router.get('/utilization', authMiddleware, controller.getUtilization);
+router.get('/maintenance', authMiddleware, controller.getMaintenance);
 
 module.exports = router;

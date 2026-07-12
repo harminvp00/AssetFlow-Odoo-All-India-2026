@@ -1,27 +1,36 @@
 const service = require('./reports.service');
-const mapper = require('./reports.mapper');
 const messages = require('./reports.messages');
 
-const getAll = async (req, res, next) => {
+const getSummary = async (req, res, next) => {
   try {
-    const items = await service.getAll();
+    const data = await service.getSummary();
     res.json({
       success: true,
-      message: messages.SUCCESS_RETRIEVED,
-      data: items.map(mapper.toDTO),
+      data,
     });
   } catch (error) {
     next(error);
   }
 };
 
-const create = async (req, res, next) => {
+const getUtilization = async (req, res, next) => {
   try {
-    const newItem = await service.create(req.body);
-    res.status(201).json({
+    const data = await service.getUtilization();
+    res.json({
       success: true,
-      message: messages.SUCCESS_CREATED,
-      data: mapper.toDTO(newItem),
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMaintenance = async (req, res, next) => {
+  try {
+    const data = await service.getMaintenance();
+    res.json({
+      success: true,
+      data,
     });
   } catch (error) {
     next(error);
@@ -29,6 +38,7 @@ const create = async (req, res, next) => {
 };
 
 module.exports = {
-  getAll,
-  create,
+  getSummary,
+  getUtilization,
+  getMaintenance,
 };

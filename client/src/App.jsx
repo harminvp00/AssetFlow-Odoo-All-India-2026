@@ -24,6 +24,10 @@ import { AllocationsPage } from './features/allocations';
 import { TransfersPage } from './features/transfers';
 import { NotificationsPage } from './features/notifications';
 import { LogsPage } from './features/logs';
+import { AttachmentsPage } from './features/attachments';
+import { AuditsPage, AuditDetailsPage } from './features/audits';
+import { MaintenancePage } from './features/maintenance';
+import { ReportsPage } from './features/reports';
 
 // Feature Placeholder Pages
 const DashboardPlaceholder = () => (
@@ -152,14 +156,15 @@ function App() {
         <Route path="/locations" element={<FallbackPage name="Locations" />} />
         <Route path="/categories" element={<FallbackPage name="Categories" />} />
         <Route path="/assets" element={<FallbackPage name="Assets" />} />
-        <Route path="/attachments" element={<FallbackPage name="Attachments" />} />
+        <Route path="/attachments" element={<AttachmentsPage />} />
         <Route path="/allocations" element={<AllocationsPage />} />
         <Route path="/transfers" element={<TransfersPage />} />
         <Route path="/bookings" element={<FallbackPage name="Bookings" />} />
-        <Route path="/maintenance" element={<FallbackPage name="Maintenance" />} />
-        <Route path="/audits" element={<FallbackPage name="Audits" />} />
+        <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="/audits" element={<AuditsPage />} />
+        <Route path="/audits/:id" element={<AuditDetailsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/reports" element={<FallbackPage name="Reports" />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/settings" element={<FallbackPage name="Settings" />} />
         <Route path="/logs" element={<LogsPage />} />
 
