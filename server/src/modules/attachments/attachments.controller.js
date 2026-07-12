@@ -1,27 +1,12 @@
 const service = require('./attachments.service');
-const mapper = require('./attachments.mapper');
-const messages = require('./attachments.messages');
 
-const getAll = async (req, res, next) => {
+const upload = async (req, res, next) => {
   try {
-    const items = await service.getAll();
+    const fileData = await service.uploadFile(req.file, req);
     res.json({
       success: true,
-      message: messages.SUCCESS_RETRIEVED,
-      data: items.map(mapper.toDTO),
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const create = async (req, res, next) => {
-  try {
-    const newItem = await service.create(req.body);
-    res.status(201).json({
-      success: true,
-      message: messages.SUCCESS_CREATED,
-      data: mapper.toDTO(newItem),
+      message: 'File uploaded successfully.',
+      data: fileData,
     });
   } catch (error) {
     next(error);
@@ -29,6 +14,5 @@ const create = async (req, res, next) => {
 };
 
 module.exports = {
-  getAll,
-  create,
+  upload,
 };
