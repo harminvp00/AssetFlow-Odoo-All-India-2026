@@ -4,11 +4,23 @@ const messages = require('./assets.messages');
 
 const getAll = async (req, res, next) => {
   try {
-    const items = await service.getAll();
+    const items = await service.getAll(req.query);
     res.json({
       success: true,
       message: messages.SUCCESS_RETRIEVED,
       data: items.map(mapper.toDTO),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getById = async (req, res, next) => {
+  try {
+    const item = await service.getById(req.params.id);
+    res.json({
+      success: true,
+      data: mapper.toDTO(item),
     });
   } catch (error) {
     next(error);
@@ -28,7 +40,35 @@ const create = async (req, res, next) => {
   }
 };
 
+const update = async (req, res, next) => {
+  try {
+    const updatedItem = await service.update(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: messages.SUCCESS_UPDATED,
+      data: mapper.toDTO(updatedItem),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const remove = async (req, res, next) => {
+  try {
+    await service.remove(req.params.id);
+    res.json({
+      success: true,
+      message: messages.SUCCESS_DELETED,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAll,
+  getById,
   create,
+  update,
+  remove,
 };
