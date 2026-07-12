@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [citext, pg_trgm]
 }
 
 model User {
@@ -1271,7 +1273,7 @@ model resource_bookings {
   booking_for_department_id                           BigInt?
   start_time                                          DateTime                     @db.Timestamptz(6)
   end_time                                            DateTime                     @db.Timestamptz(6)
-  during                                              Unsupported("tstzrange")?    @default(dbgenerated("tstzrange(start_time, end_time, '[)'::text)"))
+  during                                              Unsupported("tstzrange")?
   status_id                                           BigInt
   is_active                                           Boolean                      @default(true)
   purpose                                             String?

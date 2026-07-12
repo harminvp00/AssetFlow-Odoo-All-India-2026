@@ -22,6 +22,8 @@ import {
 
 import { AllocationsPage } from './features/allocations';
 import { TransfersPage } from './features/transfers';
+import { NotificationsPage } from './features/notifications';
+import { LogsPage } from './features/logs';
 
 // Feature Placeholder Pages
 const DashboardPlaceholder = () => (
@@ -156,10 +158,10 @@ function App() {
         <Route path="/bookings" element={<FallbackPage name="Bookings" />} />
         <Route path="/maintenance" element={<FallbackPage name="Maintenance" />} />
         <Route path="/audits" element={<FallbackPage name="Audits" />} />
-        <Route path="/notifications" element={<FallbackPage name="Notifications" />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/reports" element={<FallbackPage name="Reports" />} />
         <Route path="/settings" element={<FallbackPage name="Settings" />} />
-        <Route path="/logs" element={<FallbackPage name="Activity Logs" />} />
+        <Route path="/logs" element={<LogsPage />} />
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
