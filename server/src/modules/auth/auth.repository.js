@@ -1,16 +1,37 @@
 const { prisma } = require('../../config/database');
 
-const findAll = async () => {
-  // Placeholder database operation. Returns empty array by default.
-  return [];
+const findByEmail = async (email) => {
+  return prisma.user.findUnique({
+    where: { email },
+    include: {
+      department: true,
+    },
+  });
+};
+
+const findById = async (id) => {
+  return prisma.user.findUnique({
+    where: { id },
+    include: {
+      department: true,
+    },
+  });
 };
 
 const save = async (data) => {
-  // Placeholder save operation.
-  return data;
+  return prisma.user.create({
+    data: {
+      email: data.email,
+      password: data.password,
+      name: data.name,
+      role: 'EMPLOYEE',
+      status: true,
+    },
+  });
 };
 
 module.exports = {
-  findAll,
+  findByEmail,
+  findById,
   save,
 };
