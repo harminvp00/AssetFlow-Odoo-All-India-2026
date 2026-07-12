@@ -17,14 +17,27 @@ model User {
   role           Role            @default(PROCUREMENT_OFFICER)
   country        String?
   additionalInfo String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  ActivityLog    ActivityLog[]
-  ApprovalChain  ApprovalChain[]
-  Notification   Notification[]
-  PurchaseOrder  PurchaseOrder[]
-  RFQ            RFQ[]
-  Vendor         Vendor?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  ActivityLog          ActivityLog[]
+  ApprovalChain        ApprovalChain[]
+  Notification         Notification[]
+  PurchaseOrder        PurchaseOrder[]
+  RFQ                  RFQ[]
+  Vendor               Vendor?
+  // Opposite relations for mock schema validation
+  departmentHead       Department?          @relation("DepartmentHead")
+  departments          Department[]         @relation("DepartmentEmployees")
+  allocations          Allocation[]         @relation("EmployeeAllocations")
+  managedAllocations   Allocation[]         @relation("ManagerAllocations")
+  sourceTransfers      TransferRequest[]    @relation("SourceEmployee")
+  targetTransfers      TransferRequest[]    @relation("TargetEmployee")
+  approvedTransfers    TransferRequest[]    @relation("TransferApprover")
+  resourceBookings     ResourceBooking[]
+  raisedMaintenance    MaintenanceRequest[] @relation("RaisedBy")
+  approvedMaintenance  MaintenanceRequest[] @relation("ApprovedBy")
+  auditCycles          AuditCycle[]         @relation("AuditorCycles")
+  auditRecords         AuditRecord[]
 }
 
 // Organization Entities
@@ -46,7 +59,7 @@ model Department {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
-  @@map("departments")
+
 }
 
 model Location {
@@ -59,7 +72,7 @@ model Location {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  @@map("locations")
+
 }
 
 model AssetCategory {
@@ -70,7 +83,7 @@ model AssetCategory {
   updatedAt      DateTime @updatedAt
   assets         Asset[]
 
-  @@map("asset_categories")
+
 }
 
 // Assets Management
@@ -121,7 +134,7 @@ model Asset {
   auditRecords       AuditRecord[]
   historyLogs        ActivityLog[]
 
-  @@map("assets")
+
 }
 
 // Core Operations
@@ -142,7 +155,7 @@ model Allocation {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
-  @@map("allocations")
+
 }
 
 enum AllocationStatus {
@@ -169,7 +182,7 @@ model TransferRequest {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
-  @@map("transfer_requests")
+
 }
 
 model ResourceBooking {
@@ -184,7 +197,7 @@ model ResourceBooking {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@map("resource_bookings")
+
 }
 
 // Maintenance Workflow
@@ -220,7 +233,7 @@ model MaintenanceRequest {
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
-  @@map("maintenance_requests")
+
 }
 
 // Audit Workflow
@@ -252,7 +265,7 @@ model AuditCycle {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
-  @@map("audit_cycles")
+
 }
 
 model AuditRecord {
@@ -268,7 +281,7 @@ model AuditRecord {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
-  @@map("audit_records")
+
 }
 
 // Logs & Utilities
@@ -280,6 +293,8 @@ model ActivityLog {
   metadata    Json?
   createdAt   DateTime @default(now())
   User        User?    @relation(fields: [userId], references: [id])
+  assetId     String?
+  asset       Asset?   @relation(fields: [assetId], references: [id])
 }
 
 model Approval {
