@@ -1,8 +1,11 @@
-const toDTO = (model) => {
-  if (!model) return null;
+const toDTO = (category) => {
+  if (!category) return null;
   return {
-    ...model,
-    // Add DTO mappings here
+    id: category.id,
+    name: category.name,
+    schemaConfig: category.schemaConfig,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
   };
 };
 
