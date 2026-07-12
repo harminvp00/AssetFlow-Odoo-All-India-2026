@@ -2,9 +2,9 @@ const service = require('./allocations.service');
 const mapper = require('./allocations.mapper');
 const messages = require('./allocations.messages');
 
-const getAll = async (req, res, next) => {
+const getAllocations = async (req, res, next) => {
   try {
-    const items = await service.getAll();
+    const items = await service.getAllAllocations(req.query);
     res.json({
       success: true,
       message: messages.SUCCESS_RETRIEVED,
@@ -15,9 +15,21 @@ const getAll = async (req, res, next) => {
   }
 };
 
-const create = async (req, res, next) => {
+const getAllocationById = async (req, res, next) => {
   try {
-    const newItem = await service.create(req.body);
+    const item = await service.getAllocationById(req.params.id);
+    res.json({
+      success: true,
+      data: mapper.toDTO(item),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const allocateAsset = async (req, res, next) => {
+  try {
+    const newItem = await service.allocateAsset(req.body, req.user);
     res.status(201).json({
       success: true,
       message: messages.SUCCESS_CREATED,
@@ -28,7 +40,22 @@ const create = async (req, res, next) => {
   }
 };
 
+const returnAsset = async (req, res, next) => {
+  try {
+    const updatedItem = await service.returnAsset(req.params.id, req.body, req.user);
+    res.json({
+      success: true,
+      message: 'Asset returned and checked in successfully.',
+      data: mapper.toDTO(updatedItem),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
-  getAll,
-  create,
+  getAllocations,
+  getAllocationById,
+  allocateAsset,
+  returnAsset,
 };
