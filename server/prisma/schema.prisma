@@ -17,16 +17,274 @@ model User {
   role           Role            @default(PROCUREMENT_OFFICER)
   country        String?
   additionalInfo String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  ActivityLog    ActivityLog[]
-  ApprovalChain  ApprovalChain[]
-  Notification   Notification[]
-  PurchaseOrder  PurchaseOrder[]
-  RFQ            RFQ[]
-  Vendor         Vendor?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  ActivityLog          ActivityLog[]
+  ApprovalChain        ApprovalChain[]
+  Notification         Notification[]
+  PurchaseOrder        PurchaseOrder[]
+  RFQ                  RFQ[]
+  Vendor               Vendor?
+  // Opposite relations for mock schema validation
+  departmentHead       Department?          @relation("DepartmentHead")
+  departments          Department[]         @relation("DepartmentEmployees")
+  allocations          Allocation[]         @relation("EmployeeAllocations")
+  managedAllocations   Allocation[]         @relation("ManagerAllocations")
+  sourceTransfers      TransferRequest[]    @relation("SourceEmployee")
+  targetTransfers      TransferRequest[]    @relation("TargetEmployee")
+  approvedTransfers    TransferRequest[]    @relation("TransferApprover")
+  resourceBookings     ResourceBooking[]
+  raisedMaintenance    MaintenanceRequest[] @relation("RaisedBy")
+  approvedMaintenance  MaintenanceRequest[] @relation("ApprovedBy")
+  auditCycles          AuditCycle[]         @relation("AuditorCycles")
+  auditRecords         AuditRecord[]
 }
 
+// Organization Entities
+model Department {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  status           Boolean           @default(true)
+  parentDepartmentId String?
+  parentDepartment Department?       @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
+  subDepartments   Department[]      @relation("DepartmentHierarchy")
+  headId           String?           @unique
+  head             User?             @relation("DepartmentHead", fields: [headId], references: [id])
+  employees        User[]            @relation("DepartmentEmployees")
+  assets           Asset[]
+  allocations      Allocation[]
+  fromTransfers    TransferRequest[] @relation("FromDepartment")
+  toTransfers      TransferRequest[] @relation("ToDepartment")
+  auditCycles      AuditCycle[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+
+}
+
+model Location {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  status      Boolean      @default(true)
+  assets      Asset[]
+  auditCycles AuditCycle[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+
+}
+
+model AssetCategory {
+  id             String   @id @default(uuid())
+  name           String   @unique
+  schemaConfig   Json?    // Stores optional dynamic metadata fields (e.g. { "warrantyPeriod": "number", "macAddress": "string" })
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  assets         Asset[]
+
+
+}
+
+// Assets Management
+enum AssetCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ALLOCATED
+  RESERVED
+  UNDER_MAINTENANCE
+  LOST
+  RETIRED
+  DISPOSED
+}
+
+model Asset {
+  id                 String               @id @default(uuid())
+  tag                String               @unique // Auto-generated e.g., AF-0001
+  name               String
+  serialNumber       String               @unique
+  acquisitionDate    DateTime
+  acquisitionCost    Decimal              @db.Decimal(12, 2)
+  condition          AssetCondition       @default(NEW)
+  status             AssetStatus          @default(AVAILABLE)
+  locationId         String
+  location           Location             @relation(fields: [locationId], references: [id])
+  categoryId         String
+  category           AssetCategory        @relation(fields: [categoryId], references: [id])
+  departmentId       String?              // Department owning the asset
+  department         Department?          @relation(fields: [departmentId], references: [id])
+  isSharedBookable   Boolean              @default(false)
+  photoUrl           String?
+  documentUrls       String[]             // Supporting invoices, contracts, etc.
+  dynamicFields      Json?                // Stores values for dynamic schemaConfig fields
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  // Relations
+  allocations        Allocation[]
+  transfers          TransferRequest[]
+  bookings           ResourceBooking[]
+  maintenanceRequests MaintenanceRequest[]
+  auditRecords       AuditRecord[]
+  historyLogs        ActivityLog[]
+
+
+}
+
+// Core Operations
+model Allocation {
+  id                 String     @id @default(uuid())
+  assetId            String
+  asset              Asset      @relation(fields: [assetId], references: [id])
+  employeeId         String?
+  employee           User?      @relation("EmployeeAllocations", fields: [employeeId], references: [id])
+  departmentId       String?
+  department         Department? @relation(fields: [departmentId], references: [id])
+  allocatedById      String
+  allocatedBy        User       @relation("ManagerAllocations", fields: [allocatedById], references: [id])
+  expectedReturnDate DateTime?
+  actualReturnDate   DateTime?
+  status             AllocationStatus @default(ACTIVE)
+  checkInNotes       String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+
+}
+
+enum AllocationStatus {
+  ACTIVE
+  RETURNED
+}
+
+model TransferRequest {
+  id                String      @id @default(uuid())
+  assetId           String
+  asset             Asset       @relation(fields: [assetId], references: [id])
+  fromEmployeeId    String?
+  fromEmployee      User?       @relation("SourceEmployee", fields: [fromEmployeeId], references: [id])
+  toEmployeeId      String?
+  toEmployee        User?       @relation("TargetEmployee", fields: [toEmployeeId], references: [id])
+  fromDepartmentId  String?
+  fromDepartment    Department? @relation("FromDepartment", fields: [fromDepartmentId], references: [id])
+  toDepartmentId    String?
+  toDepartment      Department? @relation("ToDepartment", fields: [toDepartmentId], references: [id])
+  requestedById     String
+  approvedById      String?
+  approvedBy        User?       @relation("TransferApprover", fields: [approvedById], references: [id])
+  status            String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+
+}
+
+model ResourceBooking {
+  id           String   @id @default(uuid())
+  assetId      String
+  asset        Asset    @relation(fields: [assetId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  startTime    DateTime
+  endTime      DateTime
+  status       String   @default("UPCOMING") // UPCOMING, ONGOING, COMPLETED, CANCELLED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+
+}
+
+// Maintenance Workflow
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MaintenanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model MaintenanceRequest {
+  id               String              @id @default(uuid())
+  assetId          String
+  asset            Asset               @relation(fields: [assetId], references: [id])
+  raisedById       String
+  raisedBy         User                @relation("RaisedBy", fields: [raisedById], references: [id])
+  approvedById     String?
+  approvedBy       User?               @relation("ApprovedBy", fields: [approvedById], references: [id])
+  technicianId     String?
+  issueDescription String
+  priority         MaintenancePriority @default(MEDIUM)
+  status           MaintenanceStatus   @default(PENDING)
+  photoUrl         String?
+  resolutionNotes  String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+
+}
+
+// Audit Workflow
+enum AuditStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+enum VerificationStatus {
+  VERIFIED
+  MISSING
+  DAMAGED
+}
+
+model AuditCycle {
+  id                 String       @id @default(uuid())
+  name               String
+  scopeDepartmentId  String?
+  scopeDepartment    Department?  @relation(fields: [scopeDepartmentId], references: [id])
+  scopeLocationId    String?
+  scopeLocation      Location?    @relation(fields: [scopeLocationId], references: [id])
+  startDate          DateTime
+  endDate            DateTime
+  status             AuditStatus  @default(DRAFT)
+  auditors           User[]       @relation("AuditorCycles")
+  records            AuditRecord[]
+  discrepancyReport  Json?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+
+}
+
+model AuditRecord {
+  id           String             @id @default(uuid())
+  auditCycleId String
+  auditCycle   AuditCycle         @relation(fields: [auditCycleId], references: [id])
+  assetId      String
+  asset        Asset              @relation(fields: [assetId], references: [id])
+  auditorId    String
+  auditor      User               @relation(fields: [auditorId], references: [id])
+  status       VerificationStatus @default(VERIFIED)
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+
+}
+
+// Logs & Utilities
 model ActivityLog {
   id          String   @id
   type        String
@@ -35,6 +293,8 @@ model ActivityLog {
   metadata    Json?
   createdAt   DateTime @default(now())
   User        User?    @relation(fields: [userId], references: [id])
+  assetId     String?
+  asset       Asset?   @relation(fields: [assetId], references: [id])
 }
 
 model Approval {
