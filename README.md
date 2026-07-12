@@ -132,9 +132,9 @@ npm run dev
 
 ## Developers Team
 
-| Developer Name | Role | Responsibilities |
-| :--- | :--- | :--- |
-| **Ashish Gokani** | Full Stack | Architecture design, API development, state management, and Prisma integration |
-| **Harmin Vekariya** | Full Stack | UI/UX implementation, routing, database management, and deployment pipelines |
-| **Ashish Vekariya** | Backend | Core API logic, validation schemas, secure authentication, and middleware configuration |
-| **Krish Solanki** | Frontend | Responsive styling, Framer Motion/custom animations, form validation, and dashboards |
+| Developer Name | Role
+| :--- | :--- 
+| **Ashish Gokani** | Full Stack 
+| **Harmin Vekariya** | Full Stack 
+| **Ashish Vekariya** | Backend 
+| **Krish Solanki** | Frontend 
