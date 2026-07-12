@@ -1,0 +1,47 @@
+{
+  "name": "assetflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise Asset & Resource Management System",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=client",
+    "dev:server": "npm run dev --workspace=server",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "build": "npm run build:server && npm run build:client",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "npm run test --workspace=server",
+    "prisma:generate": "npm run prisma:generate --workspace=server",
+    "prisma:migrate": "npm run prisma:migrate --workspace=server",
+    "prisma:seed": "npm run prisma:seed --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^9.7.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.3.3"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.jsx": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.css": [
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+# Handle line endings automatically for files detected as text
+# and leave binary files untouched.
+* text=auto
+
+# Force Unix line endings (LF) for all source code files
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.prisma text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sql text eol=lf
+.editorconfig text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
