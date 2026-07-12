@@ -1,14 +1,22 @@
-const repository = require('./attachments.repository');
+const uploadFile = async (file, req) => {
+  if (!file) {
+    const error = new Error('No file uploaded.');
+    error.statusCode = 400;
+    throw error;
+  }
 
-const getAll = async () => {
-  return repository.findAll();
-};
+  const fileUrl = file.path && file.path.startsWith('http')
+    ? file.path
+    : `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
 
-const create = async (data) => {
-  return repository.save(data);
+  return {
+    url: fileUrl,
+    filename: file.originalname,
+    mimetype: file.mimetype,
+    size: file.size,
+  };
 };
 
 module.exports = {
-  getAll,
-  create,
+  uploadFile,
 };
