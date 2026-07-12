@@ -20,51 +20,26 @@ import {
   clearAuth,
 } from './features/auth';
 
+import { DashboardPage } from './features/dashboard';
+import { AssetsPage } from './features/assets';
+import { EmployeesPage } from './features/employees';
+import { DepartmentsPage } from './features/departments';
+import { LocationsPage } from './features/locations';
+import { CategoriesPage } from './features/categories';
 import { AllocationsPage } from './features/allocations';
 import { TransfersPage } from './features/transfers';
+import { BookingsPage } from './features/bookings';
+import { MaintenancePage } from './features/maintenance';
+import { AuditsPage } from './features/audits';
+import { AttachmentsPage } from './features/attachments';
 import { NotificationsPage } from './features/notifications';
+import { ReportsPage } from './features/reports';
+import { SettingsPage } from './features/settings';
 import { LogsPage } from './features/logs';
 import { AttachmentsPage } from './features/attachments';
 import { AuditsPage, AuditDetailsPage } from './features/audits';
 import { MaintenancePage } from './features/maintenance';
 import { ReportsPage } from './features/reports';
-
-// Feature Placeholder Pages
-const DashboardPlaceholder = () => (
-  <div className="space-y-6">
-    <div className="flex items-center justify-between">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-      <span className="text-sm bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 px-3 py-1 rounded-full font-semibold">
-        Active Session
-      </span>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      {[
-        { title: 'Total Assets', val: '1,280', color: 'border-l-emerald-500' },
-        { title: 'Active Allocations', val: '840', color: 'border-l-teal-500' },
-        { title: 'Pending Maintenance', val: '18', color: 'border-l-amber-500' },
-        { title: 'System Health', val: '99.8%', color: 'border-l-cyan-500' },
-      ].map((card, idx) => (
-        <div
-          key={idx}
-          className={`p-6 bg-white dark:bg-slate-900 border-l-4 ${card.color} rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/60`}
-        >
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{card.title}</p>
-          <p className="text-2xl font-bold mt-2 text-slate-800 dark:text-white">{card.val}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const FallbackPage = ({ name }) => (
-  <div className="p-8 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/60">
-    <h2 className="text-2xl font-bold mb-2 text-slate-800 dark:text-white">{name} Module</h2>
-    <p className="text-slate-500 dark:text-slate-400 text-sm">
-      This feature module is successfully initialized and ready for development.
-    </p>
-  </div>
-);
 
 function App() {
   const dispatch = useDispatch();
@@ -148,24 +123,24 @@ function App() {
         }
       >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPlaceholder />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Feature Modules */}
-        <Route path="/employees" element={<FallbackPage name="Employees" />} />
-        <Route path="/departments" element={<FallbackPage name="Departments" />} />
-        <Route path="/locations" element={<FallbackPage name="Locations" />} />
-        <Route path="/categories" element={<FallbackPage name="Categories" />} />
-        <Route path="/assets" element={<FallbackPage name="Assets" />} />
+        <Route path="/employees" element={<EmployeesPage />} />
+        <Route path="/departments" element={<DepartmentsPage />} />
+        <Route path="/locations" element={<LocationsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/assets" element={<AssetsPage />} />
         <Route path="/attachments" element={<AttachmentsPage />} />
         <Route path="/allocations" element={<AllocationsPage />} />
         <Route path="/transfers" element={<TransfersPage />} />
-        <Route path="/bookings" element={<FallbackPage name="Bookings" />} />
+        <Route path="/bookings" element={<BookingsPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/audits" element={<AuditsPage />} />
         <Route path="/audits/:id" element={<AuditDetailsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/settings" element={<FallbackPage name="Settings" />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/logs" element={<LogsPage />} />
 
         {/* Fallback route */}

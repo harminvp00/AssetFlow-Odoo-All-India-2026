@@ -1,13 +1,23 @@
 const { prisma } = require('../../config/database');
 
 const findAll = async () => {
-  // Placeholder database operation. Returns empty array by default.
-  return [];
+  return prisma.assetCategory.findMany({
+    include: {
+      _count: { select: { assets: true } }
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
 };
 
 const save = async (data) => {
-  // Placeholder save operation.
-  return data;
+  return prisma.assetCategory.create({
+    data: {
+      name: data.name,
+      schemaConfig: data.schemaConfig || null,
+    },
+  });
 };
 
 module.exports = {

@@ -23,6 +23,7 @@ const save = async (data) => {
       password: data.password,
       firstName,
       lastName,
+      name: data.name || `${firstName} ${lastName}`,
       role: 'PROCUREMENT_OFFICER',
     },
   });
