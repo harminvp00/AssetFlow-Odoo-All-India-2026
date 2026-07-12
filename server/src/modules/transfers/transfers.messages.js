@@ -1,5 +1,7 @@
 module.exports = {
-  SUCCESS_RETRIEVED: 'Transfers entries retrieved successfully.',
-  SUCCESS_CREATED: 'Transfers created successfully.',
-  ERROR_NOT_FOUND: 'Transfers entry not found.',
+  SUCCESS_RETRIEVED: 'Transfer requests retrieved successfully.',
+  SUCCESS_CREATED: 'Transfer request created successfully.',
+  SUCCESS_APPROVED: 'Transfer request approved successfully.',
+  SUCCESS_REJECTED: 'Transfer request rejected successfully.',
+  ERROR_NOT_FOUND: 'Transfer request not found.',
 };
