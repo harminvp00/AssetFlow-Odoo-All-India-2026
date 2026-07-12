@@ -1,5 +1,8 @@
 module.exports = {
-  SUCCESS_RETRIEVED: 'Categories entries retrieved successfully.',
-  SUCCESS_CREATED: 'Categories created successfully.',
-  ERROR_NOT_FOUND: 'Categories entry not found.',
+  SUCCESS_RETRIEVED: 'Categories retrieved successfully.',
+  SUCCESS_CREATED: 'Category created successfully.',
+  SUCCESS_UPDATED: 'Category updated successfully.',
+  SUCCESS_DELETED: 'Category deleted successfully.',
+  ERROR_NOT_FOUND: 'Category not found.',
+  ERROR_ALREADY_EXISTS: 'Category name already exists.',
 };

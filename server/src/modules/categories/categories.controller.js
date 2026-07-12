@@ -28,7 +28,34 @@ const create = async (req, res, next) => {
   }
 };
 
+const update = async (req, res, next) => {
+  try {
+    const updatedItem = await service.update(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: messages.SUCCESS_UPDATED,
+      data: mapper.toDTO(updatedItem),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const remove = async (req, res, next) => {
+  try {
+    await service.remove(req.params.id);
+    res.json({
+      success: true,
+      message: messages.SUCCESS_DELETED,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAll,
   create,
+  update,
+  remove,
 };
