@@ -1,8 +1,12 @@
-const toDTO = (model) => {
-  if (!model) return null;
+const toDTO = (loc) => {
+  if (!loc) return null;
   return {
-    ...model,
-    // Add DTO mappings here
+    id: loc.id,
+    name: loc.name,
+    description: loc.description,
+    status: loc.status,
+    createdAt: loc.createdAt,
+    updatedAt: loc.updatedAt,
   };
 };
 
