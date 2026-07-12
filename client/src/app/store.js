@@ -1,12 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from '../features/auth/store/authSlice';
 
 // Central Redux Toolkit store combining feature slices
 const store = configureStore({
   reducer: {
-    // Reducers from features/ slices will be registered here
-    // Example:
-    // auth: authReducer,
-    // assets: assetsReducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

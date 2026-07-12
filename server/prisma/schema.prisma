@@ -1,314 +1,1171 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-// User & Role Management
-enum Role {
-  ADMIN
-  MANAGER
-  DEPARTMENT_HEAD
-  EMPLOYEE
-}
-
 model User {
-  id                 String               @id @default(uuid())
-  email              String               @unique
-  name               String
-  password           String
-  role               Role                 @default(EMPLOYEE)
-  status             Boolean              @default(true) // true = Active, false = Inactive
-  departmentId       String?
-  department         Department?          @relation("DepartmentEmployees", fields: [departmentId], references: [id])
-  headOfDepartment   Department?          @relation("DepartmentHead")
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  
-  // Relations
-  allocations        Allocation[]         @relation("EmployeeAllocations")
-  allocatedBy        Allocation[]         @relation("ManagerAllocations")
-  sentTransfers      TransferRequest[]    @relation("SourceEmployee")
-  receivedTransfers  TransferRequest[]    @relation("TargetEmployee")
-  approvedTransfers  TransferRequest[]    @relation("TransferApprover")
-  bookings           ResourceBooking[]
-  raisedMaintenance  MaintenanceRequest[] @relation("RaisedBy")
-  approvedMaintenance MaintenanceRequest[] @relation("ApprovedBy")
-  auditsAssigned     AuditCycle[]         @relation("AuditorCycles")
-  auditRecords       AuditRecord[]
-  activityLogs       ActivityLog[]
-
-  @@map("users")
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  firstName      String
+  lastName       String
+  phone          String?
+  role           Role            @default(PROCUREMENT_OFFICER)
+  country        String?
+  additionalInfo String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  ActivityLog    ActivityLog[]
+  ApprovalChain  ApprovalChain[]
+  Notification   Notification[]
+  PurchaseOrder  PurchaseOrder[]
+  RFQ            RFQ[]
+  Vendor         Vendor?
 }
 
-// Organization Entities
-model Department {
-  id               String            @id @default(uuid())
-  name             String            @unique
-  status           Boolean           @default(true)
-  parentDepartmentId String?
-  parentDepartment Department?       @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
-  subDepartments   Department[]      @relation("DepartmentHierarchy")
-  headId           String?           @unique
-  head             User?             @relation("DepartmentHead", fields: [headId], references: [id])
-  employees        User[]            @relation("DepartmentEmployees")
-  assets           Asset[]
-  allocations      Allocation[]
-  fromTransfers    TransferRequest[] @relation("FromDepartment")
-  toTransfers      TransferRequest[] @relation("ToDepartment")
-  auditCycles      AuditCycle[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-
-  @@map("departments")
-}
-
-model Location {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String?
-  status      Boolean      @default(true)
-  assets      Asset[]
-  auditCycles AuditCycle[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  @@map("locations")
-}
-
-model AssetCategory {
-  id             String   @id @default(uuid())
-  name           String   @unique
-  schemaConfig   Json?    // Stores optional dynamic metadata fields (e.g. { "warrantyPeriod": "number", "macAddress": "string" })
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  assets         Asset[]
-
-  @@map("asset_categories")
-}
-
-// Assets Management
-enum AssetCondition {
-  NEW
-  GOOD
-  FAIR
-  POOR
-}
-
-enum AssetStatus {
-  AVAILABLE
-  ALLOCATED
-  RESERVED
-  UNDER_MAINTENANCE
-  LOST
-  RETIRED
-  DISPOSED
-}
-
-model Asset {
-  id                 String               @id @default(uuid())
-  tag                String               @unique // Auto-generated e.g., AF-0001
-  name               String
-  serialNumber       String               @unique
-  acquisitionDate    DateTime
-  acquisitionCost    Decimal              @db.Decimal(12, 2)
-  condition          AssetCondition       @default(NEW)
-  status             AssetStatus          @default(AVAILABLE)
-  locationId         String
-  location           Location             @relation(fields: [locationId], references: [id])
-  categoryId         String
-  category           AssetCategory        @relation(fields: [categoryId], references: [id])
-  departmentId       String?              // Department owning the asset
-  department         Department?          @relation(fields: [departmentId], references: [id])
-  isSharedBookable   Boolean              @default(false)
-  photoUrl           String?
-  documentUrls       String[]             // Supporting invoices, contracts, etc.
-  dynamicFields      Json?                // Stores values for dynamic schemaConfig fields
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-
-  // Relations
-  allocations        Allocation[]
-  transfers          TransferRequest[]
-  bookings           ResourceBooking[]
-  maintenanceRequests MaintenanceRequest[]
-  auditRecords       AuditRecord[]
-  historyLogs        ActivityLog[]
-
-  @@map("assets")
-}
-
-// Core Operations
-model Allocation {
-  id                 String     @id @default(uuid())
-  assetId            String
-  asset              Asset      @relation(fields: [assetId], references: [id])
-  employeeId         String?
-  employee           User?      @relation("EmployeeAllocations", fields: [employeeId], references: [id])
-  departmentId       String?
-  department         Department? @relation(fields: [departmentId], references: [id])
-  allocatedById      String
-  allocatedBy        User       @relation("ManagerAllocations", fields: [allocatedById], references: [id])
-  expectedReturnDate DateTime?
-  actualReturnDate   DateTime?
-  status             String     @default("ACTIVE") // ACTIVE, RETURNED, OVERDUE
-  checkInNotes       String?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-
-  @@map("allocations")
-}
-
-model TransferRequest {
-  id                String      @id @default(uuid())
-  assetId           String
-  asset             Asset       @relation(fields: [assetId], references: [id])
-  fromEmployeeId    String?
-  fromEmployee      User?       @relation("SourceEmployee", fields: [fromEmployeeId], references: [id])
-  toEmployeeId      String?
-  toEmployee        User?       @relation("TargetEmployee", fields: [toEmployeeId], references: [id])
-  fromDepartmentId  String?
-  fromDepartment    Department? @relation("FromDepartment", fields: [fromDepartmentId], references: [id])
-  toDepartmentId    String?
-  toDepartment      Department? @relation("ToDepartment", fields: [toDepartmentId], references: [id])
-  requestedById     String
-  approvedById      String?
-  approvedBy        User?       @relation("TransferApprover", fields: [approvedById], references: [id])
-  status            String      @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  @@map("transfer_requests")
-}
-
-model ResourceBooking {
-  id           String   @id @default(uuid())
-  assetId      String
-  asset        Asset    @relation(fields: [assetId], references: [id])
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  startTime    DateTime
-  endTime      DateTime
-  status       String   @default("UPCOMING") // UPCOMING, ONGOING, COMPLETED, CANCELLED
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("resource_bookings")
-}
-
-// Maintenance Workflow
-enum MaintenancePriority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum MaintenanceStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  IN_PROGRESS
-  RESOLVED
-}
-
-model MaintenanceRequest {
-  id               String              @id @default(uuid())
-  assetId          String
-  asset            Asset               @relation(fields: [assetId], references: [id])
-  raisedById       String
-  raisedBy         User                @relation("RaisedBy", fields: [raisedById], references: [id])
-  approvedById     String?
-  approvedBy       User?               @relation("ApprovedBy", fields: [approvedById], references: [id])
-  technicianId     String?
-  issueDescription String
-  priority         MaintenancePriority @default(MEDIUM)
-  status           MaintenanceStatus   @default(PENDING)
-  photoUrl         String?
-  resolutionNotes  String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  @@map("maintenance_requests")
-}
-
-// Audit Workflow
-enum AuditStatus {
-  DRAFT
-  ACTIVE
-  COMPLETED
-}
-
-enum VerificationStatus {
-  VERIFIED
-  MISSING
-  DAMAGED
-}
-
-model AuditCycle {
-  id                 String       @id @default(uuid())
-  name               String
-  scopeDepartmentId  String?
-  scopeDepartment    Department?  @relation(fields: [scopeDepartmentId], references: [id])
-  scopeLocationId    String?
-  scopeLocation      Location?    @relation(fields: [scopeLocationId], references: [id])
-  startDate          DateTime
-  endDate            DateTime
-  status             AuditStatus  @default(DRAFT)
-  auditors           User[]       @relation("AuditorCycles")
-  records            AuditRecord[]
-  discrepancyReport  Json?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-
-  @@map("audit_cycles")
-}
-
-model AuditRecord {
-  id           String             @id @default(uuid())
-  auditCycleId String
-  auditCycle   AuditCycle         @relation(fields: [auditCycleId], references: [id])
-  assetId      String
-  asset        Asset              @relation(fields: [assetId], references: [id])
-  auditorId    String
-  auditor      User               @relation(fields: [auditorId], references: [id])
-  status       VerificationStatus @default(VERIFIED)
-  notes        String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-
-  @@map("audit_records")
-}
-
-// Logs & Utilities
 model ActivityLog {
-  id        String   @id @default(uuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  assetId   String?
-  asset     Asset?   @relation(fields: [assetId], references: [id])
-  action    String   // e.g. LOGIN, REGISTER_ASSET, ALLOCATE, TRANSFER
-  details   Json
-  createdAt DateTime @default(now())
+  id          String   @id
+  type        String
+  description String
+  userId      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  User        User?    @relation(fields: [userId], references: [id])
+}
 
-  @@map("activity_logs")
+model Approval {
+  id            String          @id
+  rfqId         String
+  quotationId   String
+  currentStep   String
+  status        ApprovalStatus  @default(PENDING)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  Quotation     Quotation       @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  RFQ           RFQ             @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  ApprovalChain ApprovalChain[]
+}
+
+model ApprovalChain {
+  id         String         @id
+  approvalId String
+  userId     String
+  role       Role
+  status     ApprovalStatus @default(PENDING)
+  actionDate DateTime?
+  remarks    String?
+  stepNumber Int
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime
+  Approval   Approval       @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+  User       User           @relation(fields: [userId], references: [id])
+}
+
+model Invoice {
+  id              String            @id
+  invoiceNumber   String            @unique
+  purchaseOrderId String
+  invoiceDate     DateTime          @default(now())
+  dueDate         DateTime
+  subtotal        Decimal           @db.Decimal(12, 2)
+  cgst            Decimal           @db.Decimal(12, 2)
+  sgst            Decimal           @db.Decimal(12, 2)
+  grandTotal      Decimal           @db.Decimal(12, 2)
+  status          InvoiceStatus     @default(PENDING_PAYMENT)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  PurchaseOrder   PurchaseOrder     @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  InvoiceLineItem InvoiceLineItem[]
+}
+
+model InvoiceLineItem {
+  id        String   @id
+  invoiceId String
+  item      String
+  qty       Int
+  unit      String
+  unitPrice Decimal  @db.Decimal(12, 2)
+  totalVal  Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
-  id        String   @id @default(uuid())
+  id        String   @id
   userId    String
+  type      String
   title     String
   message   String
   isRead    Boolean  @default(false)
-  link      String?  // Optional redirection link
-  type      String   @default("INFO") // INFO, WARNING, ALERT
   createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
-  @@map("notifications")
+model PurchaseOrder {
+  id              String    @id
+  poNumber        String    @unique
+  rfqId           String
+  quotationId     String
+  vendorId        String
+  poDate          DateTime  @default(now())
+  status          POStatus  @default(DRAFT)
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  Invoice         Invoice[]
+  User            User      @relation(fields: [createdByUserId], references: [id])
+  Quotation       Quotation @relation(fields: [quotationId], references: [id])
+  RFQ             RFQ       @relation(fields: [rfqId], references: [id])
+  Vendor          Vendor    @relation(fields: [vendorId], references: [id])
+}
+
+model Quotation {
+  id                String              @id
+  rfqId             String
+  vendorId          String
+  subtotal          Decimal             @db.Decimal(12, 2)
+  gstPercentage     Decimal             @default(18.0) @db.Decimal(5, 2)
+  gstAmount         Decimal             @db.Decimal(12, 2)
+  grandTotal        Decimal             @db.Decimal(12, 2)
+  deliveryDays      Int
+  paymentTerms      String?
+  status            QuotationStatus     @default(DRAFT)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  Approval          Approval[]
+  PurchaseOrder     PurchaseOrder[]
+  RFQ               RFQ                 @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  Vendor            Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  QuotationLineItem QuotationLineItem[]
+}
+
+model QuotationLineItem {
+  id          String    @id
+  quotationId String
+  item        String
+  qty         Int
+  unit        String
+  unitPrice   Decimal   @db.Decimal(12, 2)
+  totalVal    Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  Quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+}
+
+model RFQ {
+  id              String          @id
+  title           String
+  category        String
+  deadline        DateTime
+  description     String?
+  status          RFQStatus       @default(DRAFT)
+  createdByUserId String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  attachments     String[]
+  Approval        Approval[]
+  PurchaseOrder   PurchaseOrder[]
+  Quotation       Quotation[]
+  User            User            @relation(fields: [createdByUserId], references: [id])
+  RFQAssignment   RFQAssignment[]
+  RFQLineItem     RFQLineItem[]
+}
+
+model RFQAssignment {
+  id        String   @id
+  rfqId     String
+  vendorId  String
+  createdAt DateTime @default(now())
+  RFQ       RFQ      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  Vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, vendorId])
+}
+
+model RFQLineItem {
+  id        String   @id
+  rfqId     String
+  item      String
+  qty       Int
+  unit      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  RFQ       RFQ      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+}
+
+model Vendor {
+  id            String          @id
+  name          String
+  category      String
+  gstNo         String          @unique
+  contactNo     String
+  status        VendorStatus    @default(PENDING)
+  rating        Float           @default(0.0)
+  address       String?
+  userId        String?         @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  PurchaseOrder PurchaseOrder[]
+  Quotation     Quotation[]
+  RFQAssignment RFQAssignment[]
+  User          User?           @relation(fields: [userId], references: [id])
+}
+
+/// This table is a partition table and requires additional setup for migrations. Visit https://pris.ly/d/partition-tables for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model activity_logs {
+  id                                                        BigInt         @default(autoincrement())
+  actor_user_id                                             BigInt?
+  action_id                                                 BigInt
+  entity_type_id                                            BigInt
+  entity_id                                                 BigInt
+  old_values                                                Json?
+  new_values                                                Json?
+  ip_address                                                String?        @db.Inet
+  user_agent                                                String?
+  source_id                                                 BigInt?
+  occurred_at                                               DateTime       @default(now()) @db.Timestamptz(6)
+  lookup_values_activity_logs_action_idTolookup_values      lookup_values  @relation("activity_logs_action_idTolookup_values", fields: [action_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                                     users?         @relation(fields: [actor_user_id], references: [id], onUpdate: NoAction)
+  lookup_values_activity_logs_entity_type_idTolookup_values lookup_values  @relation("activity_logs_entity_type_idTolookup_values", fields: [entity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_activity_logs_source_idTolookup_values      lookup_values? @relation("activity_logs_source_idTolookup_values", fields: [source_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, occurred_at], map: "pk_activity_logs")
+  @@index([action_id, occurred_at(sort: Desc)], map: "ix_activity_logs_action_time")
+  @@index([actor_user_id, occurred_at(sort: Desc)], map: "ix_activity_logs_actor_time")
+  @@index([entity_type_id, entity_id, occurred_at(sort: Desc)], map: "ix_activity_logs_entity")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model app_settings {
+  id                 BigInt   @id @default(autoincrement())
+  setting_key        String   @unique(map: "uq_app_settings_key") @db.VarChar(96)
+  setting_value      String
+  value_type         String   @default("STRING") @db.VarChar(16)
+  description        String?
+  updated_by_user_id BigInt?
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  users              users?   @relation(fields: [updated_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model approval_history {
+  id                  BigInt            @id @default(autoincrement())
+  approval_request_id BigInt
+  action_id           BigInt
+  actor_user_id       BigInt?
+  acted_at            DateTime          @default(now()) @db.Timestamptz(6)
+  remarks             String?
+  lookup_values       lookup_values     @relation(fields: [action_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users               users?            @relation(fields: [actor_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approval_requests   approval_requests @relation(fields: [approval_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([approval_request_id, acted_at], map: "ix_approval_history_request")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model approval_requests {
+  id                                                            BigInt             @id @default(autoincrement())
+  entity_type_id                                                BigInt
+  entity_id                                                     BigInt
+  requested_by_user_id                                          BigInt
+  requested_at                                                  DateTime           @default(now()) @db.Timestamptz(6)
+  required_approver_role_id                                     BigInt?
+  status_id                                                     BigInt
+  decided_by_user_id                                            BigInt?
+  decided_at                                                    DateTime?          @db.Timestamptz(6)
+  decision_remarks                                              String?
+  is_pending                                                    Boolean            @default(true)
+  created_at                                                    DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                                                    DateTime           @default(now()) @db.Timestamptz(6)
+  approval_history                                              approval_history[]
+  users_approval_requests_decided_by_user_idTousers             users?             @relation("approval_requests_decided_by_user_idTousers", fields: [decided_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_approval_requests_entity_type_idTolookup_values lookup_values      @relation("approval_requests_entity_type_idTolookup_values", fields: [entity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_approval_requests_requested_by_user_idTousers           users              @relation("approval_requests_requested_by_user_idTousers", fields: [requested_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles                                                         roles?             @relation(fields: [required_approver_role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_approval_requests_status_idTolookup_values      lookup_values      @relation("approval_requests_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([entity_type_id, entity_id], map: "ix_approval_requests_entity")
+  @@index([status_id], map: "ix_approval_requests_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_allocations {
+  id                                                                                    BigInt                    @id @default(autoincrement())
+  asset_id                                                                              BigInt
+  allocation_type_id                                                                    BigInt
+  employee_id                                                                           BigInt?
+  department_id                                                                         BigInt?
+  allocated_by_user_id                                                                  BigInt
+  allocated_at                                                                          DateTime                  @default(now()) @db.Timestamptz(6)
+  expected_return_date                                                                  DateTime?                 @db.Date
+  actual_return_date                                                                    DateTime?                 @db.Date
+  status_id                                                                             BigInt
+  condition_at_allocation_id                                                            BigInt?
+  is_current                                                                            Boolean                   @default(true)
+  remarks                                                                               String?
+  created_at                                                                            DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                                                                            DateTime                  @default(now()) @db.Timestamptz(6)
+  users                                                                                 users                     @relation(fields: [allocated_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_allocations_allocation_type_idTolookup_values                     lookup_values             @relation("asset_allocations_allocation_type_idTolookup_values", fields: [allocation_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assets                                                                                assets                    @relation(fields: [asset_id], references: [id], onUpdate: NoAction)
+  lookup_values_asset_allocations_condition_at_allocation_idTolookup_values             lookup_values?            @relation("asset_allocations_condition_at_allocation_idTolookup_values", fields: [condition_at_allocation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                                                                           departments?              @relation(fields: [department_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  employees                                                                             employees?                @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  lookup_values_asset_allocations_status_idTolookup_values                              lookup_values             @relation("asset_allocations_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asset_return_requests                                                                 asset_return_requests[]
+  asset_transfer_requests_asset_transfer_requests_from_allocation_idToasset_allocations asset_transfer_requests[] @relation("asset_transfer_requests_from_allocation_idToasset_allocations")
+  asset_transfer_requests_asset_transfer_requests_new_allocation_idToasset_allocations  asset_transfer_requests[] @relation("asset_transfer_requests_new_allocation_idToasset_allocations")
+
+  @@index([asset_id, allocated_at(sort: Desc)], map: "ix_allocations_asset_time")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_attachments {
+  asset_id        BigInt
+  attachment_id   BigInt
+  attachment_role String      @default("PHOTO") @db.VarChar(32)
+  assets          assets      @relation(fields: [asset_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  attachments     attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([asset_id, attachment_id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_categories {
+  id                      BigInt             @id @default(autoincrement())
+  name                    String             @db.VarChar(128)
+  code                    String             @unique(map: "uq_asset_categories_code") @db.VarChar(32)
+  parent_category_id      BigInt?
+  description             String?
+  default_warranty_months Int?               @db.SmallInt
+  status_id               BigInt
+  created_at              DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime           @default(now()) @db.Timestamptz(6)
+  deleted_at              DateTime?          @db.Timestamptz(6)
+  asset_categories        asset_categories?  @relation("asset_categoriesToasset_categories", fields: [parent_category_id], references: [id], onUpdate: NoAction)
+  other_asset_categories  asset_categories[] @relation("asset_categoriesToasset_categories")
+  lookup_values           lookup_values      @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assets                  assets[]
+
+  @@index([parent_category_id], map: "ix_asset_categories_parent")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_condition_history {
+  id                                                                         BigInt         @id @default(autoincrement())
+  asset_id                                                                   BigInt
+  previous_condition_id                                                      BigInt?
+  new_condition_id                                                           BigInt
+  recorded_by_user_id                                                        BigInt?
+  recorded_at                                                                DateTime       @default(now()) @db.Timestamptz(6)
+  source_entity_type_id                                                      BigInt?
+  source_entity_id                                                           BigInt?
+  remarks                                                                    String?
+  assets                                                                     assets         @relation(fields: [asset_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lookup_values_asset_condition_history_new_condition_idTolookup_values      lookup_values  @relation("asset_condition_history_new_condition_idTolookup_values", fields: [new_condition_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_condition_history_previous_condition_idTolookup_values lookup_values? @relation("asset_condition_history_previous_condition_idTolookup_values", fields: [previous_condition_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                                                      users?         @relation(fields: [recorded_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_condition_history_source_entity_type_idTolookup_values lookup_values? @relation("asset_condition_history_source_entity_type_idTolookup_values", fields: [source_entity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([asset_id, recorded_at(sort: Desc)], map: "ix_asset_condition_history_asset_time")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_lifecycle_events {
+  id                                                                        BigInt         @id @default(autoincrement())
+  asset_id                                                                  BigInt
+  previous_status_id                                                        BigInt?
+  new_status_id                                                             BigInt
+  changed_by_user_id                                                        BigInt?
+  changed_at                                                                DateTime       @default(now()) @db.Timestamptz(6)
+  reason                                                                    String?
+  remarks                                                                   String?
+  source_entity_type_id                                                     BigInt?
+  source_entity_id                                                          BigInt?
+  assets                                                                    assets         @relation(fields: [asset_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                                                                     users?         @relation(fields: [changed_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_lifecycle_events_new_status_idTolookup_values         lookup_values  @relation("asset_lifecycle_events_new_status_idTolookup_values", fields: [new_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_lifecycle_events_previous_status_idTolookup_values    lookup_values? @relation("asset_lifecycle_events_previous_status_idTolookup_values", fields: [previous_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_lifecycle_events_source_entity_type_idTolookup_values lookup_values? @relation("asset_lifecycle_events_source_entity_type_idTolookup_values", fields: [source_entity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([asset_id, changed_at(sort: Desc)], map: "ix_asset_lifecycle_asset_time")
+  @@index([new_status_id], map: "ix_asset_lifecycle_new_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_location_history {
+  id                                                               BigInt         @id @default(autoincrement())
+  asset_id                                                         BigInt
+  previous_location_id                                             BigInt?
+  new_location_id                                                  BigInt?
+  moved_by_user_id                                                 BigInt?
+  moved_at                                                         DateTime       @default(now()) @db.Timestamptz(6)
+  source_entity_type_id                                            BigInt?
+  source_entity_id                                                 BigInt?
+  remarks                                                          String?
+  assets                                                           assets         @relation(fields: [asset_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                                                            users?         @relation(fields: [moved_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations_asset_location_history_new_location_idTolocations      locations?     @relation("asset_location_history_new_location_idTolocations", fields: [new_location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations_asset_location_history_previous_location_idTolocations locations?     @relation("asset_location_history_previous_location_idTolocations", fields: [previous_location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values                                                    lookup_values? @relation(fields: [source_entity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([asset_id, moved_at(sort: Desc)], map: "ix_asset_location_history_asset_time")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_return_requests {
+  id                                                                       BigInt            @id @default(autoincrement())
+  allocation_id                                                            BigInt
+  requested_by_user_id                                                     BigInt
+  requested_at                                                             DateTime          @default(now()) @db.Timestamptz(6)
+  condition_notes                                                          String?
+  returned_condition_id                                                    BigInt?
+  inspected_by_user_id                                                     BigInt?
+  inspected_at                                                             DateTime?         @db.Timestamptz(6)
+  status_id                                                                BigInt
+  completed_at                                                             DateTime?         @db.Timestamptz(6)
+  created_at                                                               DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at                                                               DateTime          @default(now()) @db.Timestamptz(6)
+  asset_allocations                                                        asset_allocations @relation(fields: [allocation_id], references: [id], onUpdate: NoAction)
+  users_asset_return_requests_inspected_by_user_idTousers                  users?            @relation("asset_return_requests_inspected_by_user_idTousers", fields: [inspected_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_asset_return_requests_requested_by_user_idTousers                  users             @relation("asset_return_requests_requested_by_user_idTousers", fields: [requested_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_return_requests_returned_condition_idTolookup_values lookup_values?    @relation("asset_return_requests_returned_condition_idTolookup_values", fields: [returned_condition_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_asset_return_requests_status_idTolookup_values             lookup_values     @relation("asset_return_requests_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([allocation_id], map: "ix_return_requests_allocation")
+  @@index([status_id], map: "ix_return_requests_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_transfer_requests {
+  id                                                                              BigInt             @id @default(autoincrement())
+  asset_id                                                                        BigInt
+  from_allocation_id                                                              BigInt?
+  to_employee_id                                                                  BigInt?
+  to_department_id                                                                BigInt?
+  requested_by_user_id                                                            BigInt
+  reason                                                                          String?
+  status_id                                                                       BigInt
+  requested_at                                                                    DateTime           @default(now()) @db.Timestamptz(6)
+  completed_at                                                                    DateTime?          @db.Timestamptz(6)
+  new_allocation_id                                                               BigInt?
+  created_at                                                                      DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                                                                      DateTime           @default(now()) @db.Timestamptz(6)
+  assets                                                                          assets             @relation(fields: [asset_id], references: [id], onUpdate: NoAction)
+  asset_allocations_asset_transfer_requests_from_allocation_idToasset_allocations asset_allocations? @relation("asset_transfer_requests_from_allocation_idToasset_allocations", fields: [from_allocation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asset_allocations_asset_transfer_requests_new_allocation_idToasset_allocations  asset_allocations? @relation("asset_transfer_requests_new_allocation_idToasset_allocations", fields: [new_allocation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                                                           users              @relation(fields: [requested_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values                                                                   lookup_values      @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                                                                     departments?       @relation(fields: [to_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees                                                                       employees?         @relation(fields: [to_employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([asset_id, requested_at(sort: Desc)], map: "ix_transfer_requests_asset")
+  @@index([status_id], map: "ix_transfer_requests_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model assets {
+  id                                               BigInt                    @id @default(autoincrement())
+  public_id                                        String                    @unique(map: "uq_assets_public_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asset_tag                                        String?                   @unique(map: "uq_assets_tag") @db.VarChar(32)
+  name                                             String                    @db.VarChar(160)
+  category_id                                      BigInt
+  serial_number                                    String?                   @unique(map: "uq_assets_serial") @db.VarChar(128)
+  qr_code_value                                    String?                   @unique(map: "uq_assets_qr") @db.VarChar(128)
+  status_id                                        BigInt
+  condition_id                                     BigInt
+  current_location_id                              BigInt?
+  current_holder_employee_id                       BigInt?
+  current_holder_department_id                     BigInt?
+  is_shared_bookable                               Boolean                   @default(false)
+  acquisition_date                                 DateTime?                 @db.Date
+  acquisition_cost                                 Decimal?                  @db.Decimal(14, 2)
+  warranty_expiry_date                             DateTime?                 @db.Date
+  retirement_date                                  DateTime?                 @db.Date
+  disposal_date                                    DateTime?                 @db.Date
+  disposal_method                                  String?                   @db.VarChar(64)
+  custom_attributes                                Json                      @default("{}")
+  created_at                                       DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                                       DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at                                       DateTime?                 @db.Timestamptz(6)
+  asset_allocations                                asset_allocations[]
+  asset_attachments                                asset_attachments[]
+  asset_condition_history                          asset_condition_history[]
+  asset_lifecycle_events                           asset_lifecycle_events[]
+  asset_location_history                           asset_location_history[]
+  asset_transfer_requests                          asset_transfer_requests[]
+  asset_categories                                 asset_categories          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  lookup_values_assets_condition_idTolookup_values lookup_values             @relation("assets_condition_idTolookup_values", fields: [condition_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                                      departments?              @relation(fields: [current_holder_department_id], references: [id], onUpdate: NoAction)
+  employees                                        employees?                @relation(fields: [current_holder_employee_id], references: [id], onUpdate: NoAction)
+  locations                                        locations?                @relation(fields: [current_location_id], references: [id], onUpdate: NoAction)
+  lookup_values_assets_status_idTolookup_values    lookup_values             @relation("assets_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audit_asset_assignments                          audit_asset_assignments[]
+  maintenance_requests                             maintenance_requests[]
+  resource_bookings                                resource_bookings[]
+
+  @@index([custom_attributes], map: "ix_assets_custom_attributes_gin", type: Gin)
+  @@index([current_location_id], map: "ix_assets_location")
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "ix_assets_name_trgm", type: Gin)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model attachments {
+  id                      BigInt                    @id @default(autoincrement())
+  file_name               String                    @db.VarChar(255)
+  file_url                String
+  mime_type               String?                   @db.VarChar(128)
+  file_size_bytes         BigInt?
+  uploaded_by_user_id     BigInt
+  description             String?
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at              DateTime?                 @db.Timestamptz(6)
+  asset_attachments       asset_attachments[]
+  users                   users                     @relation(fields: [uploaded_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audit_attachments       audit_attachments[]
+  employee_attachments    employee_attachments[]
+  maintenance_attachments maintenance_attachments[]
+
+  @@index([uploaded_by_user_id], map: "ix_attachments_uploaded_by")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_asset_assignments {
+  id                                                                        BigInt               @id @default(autoincrement())
+  audit_cycle_id                                                            BigInt
+  asset_id                                                                  BigInt
+  assigned_auditor_employee_id                                              BigInt?
+  verification_result_id                                                    BigInt?
+  verified_by_employee_id                                                   BigInt?
+  verified_at                                                               DateTime?            @db.Timestamptz(6)
+  remarks                                                                   String?
+  created_at                                                                DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at                                                                DateTime             @default(now()) @db.Timestamptz(6)
+  assets                                                                    assets               @relation(fields: [asset_id], references: [id], onUpdate: NoAction)
+  employees_audit_asset_assignments_assigned_auditor_employee_idToemployees employees?           @relation("audit_asset_assignments_assigned_auditor_employee_idToemployees", fields: [assigned_auditor_employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audit_cycles                                                              audit_cycles         @relation(fields: [audit_cycle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lookup_values                                                             lookup_values?       @relation(fields: [verification_result_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees_audit_asset_assignments_verified_by_employee_idToemployees      employees?           @relation("audit_asset_assignments_verified_by_employee_idToemployees", fields: [verified_by_employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audit_attachments                                                         audit_attachments[]
+  audit_discrepancies                                                       audit_discrepancies?
+
+  @@unique([audit_cycle_id, asset_id], map: "uq_audit_asset_assignment")
+  @@index([asset_id], map: "ix_audit_assignments_asset")
+  @@index([audit_cycle_id], map: "ix_audit_assignments_cycle")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_attachments {
+  audit_asset_assignment_id BigInt
+  attachment_id             BigInt
+  attachments               attachments             @relation(fields: [attachment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  audit_asset_assignments   audit_asset_assignments @relation(fields: [audit_asset_assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([audit_asset_assignment_id, attachment_id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_cycle_auditors {
+  audit_cycle_id      BigInt
+  employee_id         BigInt
+  assigned_by_user_id BigInt
+  assigned_at         DateTime     @default(now()) @db.Timestamptz(6)
+  users               users        @relation(fields: [assigned_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audit_cycles        audit_cycles @relation(fields: [audit_cycle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees           employees    @relation(fields: [employee_id], references: [id], onUpdate: NoAction)
+
+  @@id([audit_cycle_id, employee_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_cycles {
+  id                                           BigInt                    @id @default(autoincrement())
+  name                                         String                    @db.VarChar(160)
+  scope_department_id                          BigInt?
+  scope_location_id                            BigInt?
+  start_date                                   DateTime                  @db.Date
+  end_date                                     DateTime                  @db.Date
+  status_id                                    BigInt
+  created_by_user_id                           BigInt
+  closed_by_user_id                            BigInt?
+  closed_at                                    DateTime?                 @db.Timestamptz(6)
+  created_at                                   DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                                   DateTime                  @default(now()) @db.Timestamptz(6)
+  audit_asset_assignments                      audit_asset_assignments[]
+  audit_cycle_auditors                         audit_cycle_auditors[]
+  users_audit_cycles_closed_by_user_idTousers  users?                    @relation("audit_cycles_closed_by_user_idTousers", fields: [closed_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_audit_cycles_created_by_user_idTousers users                     @relation("audit_cycles_created_by_user_idTousers", fields: [created_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                                  departments?              @relation(fields: [scope_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations                                    locations?                @relation(fields: [scope_location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values                                lookup_values             @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([start_date, end_date], map: "ix_audit_cycles_dates")
+  @@index([status_id], map: "ix_audit_cycles_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_discrepancies {
+  id                                                                   BigInt                  @id @default(autoincrement())
+  audit_asset_assignment_id                                            BigInt                  @unique
+  discrepancy_type_id                                                  BigInt
+  status_id                                                            BigInt
+  resolution_notes                                                     String?
+  resolved_by_user_id                                                  BigInt?
+  resolved_at                                                          DateTime?               @db.Timestamptz(6)
+  created_at                                                           DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                                                           DateTime                @default(now()) @db.Timestamptz(6)
+  audit_asset_assignments                                              audit_asset_assignments @relation(fields: [audit_asset_assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lookup_values_audit_discrepancies_discrepancy_type_idTolookup_values lookup_values           @relation("audit_discrepancies_discrepancy_type_idTolookup_values", fields: [discrepancy_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                                                users?                  @relation(fields: [resolved_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_audit_discrepancies_status_idTolookup_values           lookup_values           @relation("audit_discrepancies_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status_id], map: "ix_audit_discrepancies_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model booking_reminders {
+  id                                                        BigInt            @id @default(autoincrement())
+  booking_id                                                BigInt
+  remind_at                                                 DateTime          @db.Timestamptz(6)
+  channel_id                                                BigInt?
+  status_id                                                 BigInt
+  sent_at                                                   DateTime?         @db.Timestamptz(6)
+  created_at                                                DateTime          @default(now()) @db.Timestamptz(6)
+  resource_bookings                                         resource_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lookup_values_booking_reminders_channel_idTolookup_values lookup_values?    @relation("booking_reminders_channel_idTolookup_values", fields: [channel_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_booking_reminders_status_idTolookup_values  lookup_values     @relation("booking_reminders_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model booking_reschedule_history {
+  id                     BigInt            @id @default(autoincrement())
+  booking_id             BigInt
+  previous_start_time    DateTime          @db.Timestamptz(6)
+  previous_end_time      DateTime          @db.Timestamptz(6)
+  new_start_time         DateTime          @db.Timestamptz(6)
+  new_end_time           DateTime          @db.Timestamptz(6)
+  rescheduled_by_user_id BigInt
+  rescheduled_at         DateTime          @default(now()) @db.Timestamptz(6)
+  reason                 String?
+  resource_bookings      resource_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                  users             @relation(fields: [rescheduled_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([booking_id, rescheduled_at(sort: Desc)], map: "ix_booking_reschedule_booking")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model department_head_history {
+  id                  BigInt      @id @default(autoincrement())
+  department_id       BigInt
+  employee_id         BigInt
+  assigned_by_user_id BigInt
+  assigned_at         DateTime    @default(now()) @db.Timestamptz(6)
+  ended_at            DateTime?   @db.Timestamptz(6)
+  remarks             String?
+  users               users       @relation(fields: [assigned_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments         departments @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees           employees   @relation(fields: [employee_id], references: [id], onUpdate: NoAction)
+
+  @@index([department_id, assigned_at(sort: Desc)], map: "ix_dept_head_history_dept")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model departments {
+  id                                                           BigInt                    @id @default(autoincrement())
+  name                                                         String                    @db.VarChar(128)
+  code                                                         String                    @unique(map: "uq_departments_code") @db.VarChar(32)
+  description                                                  String?
+  parent_department_id                                         BigInt?
+  department_head_employee_id                                  BigInt?
+  status_id                                                    BigInt
+  created_at                                                   DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                                                   DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at                                                   DateTime?                 @db.Timestamptz(6)
+  asset_allocations                                            asset_allocations[]
+  asset_transfer_requests                                      asset_transfer_requests[]
+  assets                                                       assets[]
+  audit_cycles                                                 audit_cycles[]
+  department_head_history                                      department_head_history[]
+  departments                                                  departments?              @relation("departmentsTodepartments", fields: [parent_department_id], references: [id], onUpdate: NoAction)
+  other_departments                                            departments[]             @relation("departmentsTodepartments")
+  lookup_values                                                lookup_values             @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees_departments_department_head_employee_idToemployees employees?                @relation("departments_department_head_employee_idToemployees", fields: [department_head_employee_id], references: [id], onUpdate: NoAction, map: "fk_departments_head_employee")
+  employees_employees_department_idTodepartments               employees[]               @relation("employees_department_idTodepartments")
+  resource_bookings                                            resource_bookings[]
+
+  @@index([department_head_employee_id], map: "ix_departments_head")
+  @@index([parent_department_id], map: "ix_departments_parent")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model employee_attachments {
+  employee_id   BigInt
+  attachment_id BigInt
+  attachments   attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees     employees   @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([employee_id, attachment_id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model employees {
+  id                                                                                      BigInt                    @id @default(autoincrement())
+  user_id                                                                                 BigInt                    @unique(map: "uq_employees_user")
+  employee_code                                                                           String                    @unique(map: "uq_employees_code") @db.VarChar(32)
+  full_name                                                                               String                    @db.VarChar(160)
+  department_id                                                                           BigInt?
+  manager_employee_id                                                                     BigInt?
+  phone                                                                                   String?                   @db.VarChar(32)
+  designation                                                                             String?                   @db.VarChar(96)
+  status_id                                                                               BigInt
+  joined_at                                                                               DateTime?                 @db.Date
+  created_at                                                                              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                                                                              DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at                                                                              DateTime?                 @db.Timestamptz(6)
+  asset_allocations                                                                       asset_allocations[]
+  asset_transfer_requests                                                                 asset_transfer_requests[]
+  assets                                                                                  assets[]
+  audit_asset_assignments_audit_asset_assignments_assigned_auditor_employee_idToemployees audit_asset_assignments[] @relation("audit_asset_assignments_assigned_auditor_employee_idToemployees")
+  audit_asset_assignments_audit_asset_assignments_verified_by_employee_idToemployees      audit_asset_assignments[] @relation("audit_asset_assignments_verified_by_employee_idToemployees")
+  audit_cycle_auditors                                                                    audit_cycle_auditors[]
+  department_head_history                                                                 department_head_history[]
+  departments_departments_department_head_employee_idToemployees                          departments[]             @relation("departments_department_head_employee_idToemployees")
+  employee_attachments                                                                    employee_attachments[]
+  departments_employees_department_idTodepartments                                        departments?              @relation("employees_department_idTodepartments", fields: [department_id], references: [id], onUpdate: NoAction)
+  employees                                                                               employees?                @relation("employeesToemployees", fields: [manager_employee_id], references: [id], onUpdate: NoAction)
+  other_employees                                                                         employees[]               @relation("employeesToemployees")
+  lookup_values                                                                           lookup_values             @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                                                                   users                     @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  maintenance_requests                                                                    maintenance_requests[]
+
+  @@index([department_id], map: "ix_employees_department")
+  @@index([manager_employee_id], map: "ix_employees_manager")
+  @@index([full_name(ops: raw("gin_trgm_ops"))], map: "ix_employees_name_trgm", type: Gin)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model locations {
+  id                                                                            BigInt                   @id @default(autoincrement())
+  name                                                                          String                   @db.VarChar(128)
+  code                                                                          String                   @unique(map: "uq_locations_code") @db.VarChar(32)
+  parent_location_id                                                            BigInt?
+  building                                                                      String?                  @db.VarChar(96)
+  floor                                                                         String?                  @db.VarChar(32)
+  room                                                                          String?                  @db.VarChar(32)
+  address                                                                       String?
+  is_active                                                                     Boolean                  @default(true)
+  created_at                                                                    DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at                                                                    DateTime                 @default(now()) @db.Timestamptz(6)
+  asset_location_history_asset_location_history_new_location_idTolocations      asset_location_history[] @relation("asset_location_history_new_location_idTolocations")
+  asset_location_history_asset_location_history_previous_location_idTolocations asset_location_history[] @relation("asset_location_history_previous_location_idTolocations")
+  assets                                                                        assets[]
+  audit_cycles                                                                  audit_cycles[]
+  locations                                                                     locations?               @relation("locationsTolocations", fields: [parent_location_id], references: [id], onUpdate: NoAction)
+  other_locations                                                               locations[]              @relation("locationsTolocations")
+
+  @@index([parent_location_id], map: "ix_locations_parent")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model login_history {
+  id              BigInt   @id @default(autoincrement())
+  user_id         BigInt?
+  attempted_email String   @db.Citext
+  is_success      Boolean
+  failure_reason  String?  @db.VarChar(128)
+  ip_address      String?  @db.Inet
+  user_agent      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  users           users?   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([attempted_email, created_at(sort: Desc)], map: "ix_login_history_email_time")
+  @@index([user_id, created_at(sort: Desc)], map: "ix_login_history_user_time")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model lookup_domains {
+  id            BigInt          @id @default(autoincrement())
+  code          String          @unique(map: "uq_lookup_domains_code") @db.VarChar(64)
+  name          String          @db.VarChar(128)
+  description   String?
+  is_system     Boolean         @default(true)
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime        @default(now()) @db.Timestamptz(6)
+  lookup_values lookup_values[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model lookup_values {
+  id                                                                                      BigInt                       @id @default(autoincrement())
+  domain_id                                                                               BigInt
+  code                                                                                    String                       @db.VarChar(64)
+  label                                                                                   String                       @db.VarChar(128)
+  sort_order                                                                              Int                          @default(0) @db.SmallInt
+  is_active                                                                               Boolean                      @default(true)
+  meta                                                                                    Json?
+  created_at                                                                              DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                                                                              DateTime                     @default(now()) @db.Timestamptz(6)
+  activity_logs_activity_logs_action_idTolookup_values                                    activity_logs[]              @relation("activity_logs_action_idTolookup_values")
+  activity_logs_activity_logs_entity_type_idTolookup_values                               activity_logs[]              @relation("activity_logs_entity_type_idTolookup_values")
+  activity_logs_activity_logs_source_idTolookup_values                                    activity_logs[]              @relation("activity_logs_source_idTolookup_values")
+  approval_history                                                                        approval_history[]
+  approval_requests_approval_requests_entity_type_idTolookup_values                       approval_requests[]          @relation("approval_requests_entity_type_idTolookup_values")
+  approval_requests_approval_requests_status_idTolookup_values                            approval_requests[]          @relation("approval_requests_status_idTolookup_values")
+  asset_allocations_asset_allocations_allocation_type_idTolookup_values                   asset_allocations[]          @relation("asset_allocations_allocation_type_idTolookup_values")
+  asset_allocations_asset_allocations_condition_at_allocation_idTolookup_values           asset_allocations[]          @relation("asset_allocations_condition_at_allocation_idTolookup_values")
+  asset_allocations_asset_allocations_status_idTolookup_values                            asset_allocations[]          @relation("asset_allocations_status_idTolookup_values")
+  asset_categories                                                                        asset_categories[]
+  asset_condition_history_asset_condition_history_new_condition_idTolookup_values         asset_condition_history[]    @relation("asset_condition_history_new_condition_idTolookup_values")
+  asset_condition_history_asset_condition_history_previous_condition_idTolookup_values    asset_condition_history[]    @relation("asset_condition_history_previous_condition_idTolookup_values")
+  asset_condition_history_asset_condition_history_source_entity_type_idTolookup_values    asset_condition_history[]    @relation("asset_condition_history_source_entity_type_idTolookup_values")
+  asset_lifecycle_events_asset_lifecycle_events_new_status_idTolookup_values              asset_lifecycle_events[]     @relation("asset_lifecycle_events_new_status_idTolookup_values")
+  asset_lifecycle_events_asset_lifecycle_events_previous_status_idTolookup_values         asset_lifecycle_events[]     @relation("asset_lifecycle_events_previous_status_idTolookup_values")
+  asset_lifecycle_events_asset_lifecycle_events_source_entity_type_idTolookup_values      asset_lifecycle_events[]     @relation("asset_lifecycle_events_source_entity_type_idTolookup_values")
+  asset_location_history                                                                  asset_location_history[]
+  asset_return_requests_asset_return_requests_returned_condition_idTolookup_values        asset_return_requests[]      @relation("asset_return_requests_returned_condition_idTolookup_values")
+  asset_return_requests_asset_return_requests_status_idTolookup_values                    asset_return_requests[]      @relation("asset_return_requests_status_idTolookup_values")
+  asset_transfer_requests                                                                 asset_transfer_requests[]
+  assets_assets_condition_idTolookup_values                                               assets[]                     @relation("assets_condition_idTolookup_values")
+  assets_assets_status_idTolookup_values                                                  assets[]                     @relation("assets_status_idTolookup_values")
+  audit_asset_assignments                                                                 audit_asset_assignments[]
+  audit_cycles                                                                            audit_cycles[]
+  audit_discrepancies_audit_discrepancies_discrepancy_type_idTolookup_values              audit_discrepancies[]        @relation("audit_discrepancies_discrepancy_type_idTolookup_values")
+  audit_discrepancies_audit_discrepancies_status_idTolookup_values                        audit_discrepancies[]        @relation("audit_discrepancies_status_idTolookup_values")
+  booking_reminders_booking_reminders_channel_idTolookup_values                           booking_reminders[]          @relation("booking_reminders_channel_idTolookup_values")
+  booking_reminders_booking_reminders_status_idTolookup_values                            booking_reminders[]          @relation("booking_reminders_status_idTolookup_values")
+  departments                                                                             departments[]
+  employees                                                                               employees[]
+  lookup_domains                                                                          lookup_domains               @relation(fields: [domain_id], references: [id])
+  maintenance_requests_maintenance_requests_priority_idTolookup_values                    maintenance_requests[]       @relation("maintenance_requests_priority_idTolookup_values")
+  maintenance_requests_maintenance_requests_status_idTolookup_values                      maintenance_requests[]       @relation("maintenance_requests_status_idTolookup_values")
+  maintenance_status_history_maintenance_status_history_new_status_idTolookup_values      maintenance_status_history[] @relation("maintenance_status_history_new_status_idTolookup_values")
+  maintenance_status_history_maintenance_status_history_previous_status_idTolookup_values maintenance_status_history[] @relation("maintenance_status_history_previous_status_idTolookup_values")
+  notification_recipients                                                                 notification_recipients[]
+  notification_templates                                                                  notification_templates[]
+  notifications_notifications_source_entity_type_idTolookup_values                        notifications[]              @relation("notifications_source_entity_type_idTolookup_values")
+  notifications_notifications_type_idTolookup_values                                      notifications[]              @relation("notifications_type_idTolookup_values")
+  resource_bookings                                                                       resource_bookings[]
+  users                                                                                   users[]
+
+  @@unique([domain_id, code], map: "uq_lookup_values_domain_code")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model maintenance_attachments {
+  maintenance_request_id BigInt
+  attachment_id          BigInt
+  attachments            attachments          @relation(fields: [attachment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  maintenance_requests   maintenance_requests @relation(fields: [maintenance_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([maintenance_request_id, attachment_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model maintenance_requests {
+  id                                                            BigInt                       @id @default(autoincrement())
+  asset_id                                                      BigInt
+  raised_by_user_id                                             BigInt
+  issue_description                                             String
+  priority_id                                                   BigInt
+  status_id                                                     BigInt
+  approved_by_user_id                                           BigInt?
+  approved_at                                                   DateTime?                    @db.Timestamptz(6)
+  assigned_technician_employee_id                               BigInt?
+  assigned_at                                                   DateTime?                    @db.Timestamptz(6)
+  resolved_at                                                   DateTime?                    @db.Timestamptz(6)
+  resolution_notes                                              String?
+  estimated_cost                                                Decimal?                     @db.Decimal(14, 2)
+  actual_cost                                                   Decimal?                     @db.Decimal(14, 2)
+  created_at                                                    DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                                                    DateTime                     @default(now()) @db.Timestamptz(6)
+  maintenance_attachments                                       maintenance_attachments[]
+  users_maintenance_requests_approved_by_user_idTousers         users?                       @relation("maintenance_requests_approved_by_user_idTousers", fields: [approved_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assets                                                        assets                       @relation(fields: [asset_id], references: [id], onUpdate: NoAction)
+  employees                                                     employees?                   @relation(fields: [assigned_technician_employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_maintenance_requests_priority_idTolookup_values lookup_values                @relation("maintenance_requests_priority_idTolookup_values", fields: [priority_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_maintenance_requests_raised_by_user_idTousers           users                        @relation("maintenance_requests_raised_by_user_idTousers", fields: [raised_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_maintenance_requests_status_idTolookup_values   lookup_values                @relation("maintenance_requests_status_idTolookup_values", fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  maintenance_status_history                                    maintenance_status_history[]
+
+  @@index([asset_id, created_at(sort: Desc)], map: "ix_maintenance_asset")
+  @@index([priority_id, status_id], map: "ix_maintenance_priority_status")
+  @@index([status_id], map: "ix_maintenance_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model maintenance_status_history {
+  id                                                                         BigInt               @id @default(autoincrement())
+  maintenance_request_id                                                     BigInt
+  previous_status_id                                                         BigInt?
+  new_status_id                                                              BigInt
+  changed_by_user_id                                                         BigInt?
+  changed_at                                                                 DateTime             @default(now()) @db.Timestamptz(6)
+  remarks                                                                    String?
+  users                                                                      users?               @relation(fields: [changed_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  maintenance_requests                                                       maintenance_requests @relation(fields: [maintenance_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lookup_values_maintenance_status_history_new_status_idTolookup_values      lookup_values        @relation("maintenance_status_history_new_status_idTolookup_values", fields: [new_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_maintenance_status_history_previous_status_idTolookup_values lookup_values?       @relation("maintenance_status_history_previous_status_idTolookup_values", fields: [previous_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([maintenance_request_id, changed_at], map: "ix_maintenance_status_history_req")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notification_recipients {
+  id                 BigInt        @id @default(autoincrement())
+  notification_id    BigInt
+  recipient_user_id  BigInt
+  delivery_status_id BigInt
+  sent_at            DateTime?     @db.Timestamptz(6)
+  read_at            DateTime?     @db.Timestamptz(6)
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  lookup_values      lookup_values @relation(fields: [delivery_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notifications      notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users         @relation(fields: [recipient_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([notification_id, recipient_user_id], map: "uq_notification_recipient")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notification_templates {
+  id             BigInt          @id @default(autoincrement())
+  type_id        BigInt
+  title_template String
+  body_template  String
+  is_active      Boolean         @default(true)
+  created_at     DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime        @default(now()) @db.Timestamptz(6)
+  lookup_values  lookup_values   @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notifications  notifications[]
+
+  @@index([type_id], map: "ix_notification_templates_type")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notifications {
+  id                                                               BigInt                    @id @default(autoincrement())
+  template_id                                                      BigInt?
+  type_id                                                          BigInt
+  title                                                            String
+  body                                                             String
+  source_entity_type_id                                            BigInt?
+  source_entity_id                                                 BigInt?
+  created_at                                                       DateTime                  @default(now()) @db.Timestamptz(6)
+  notification_recipients                                          notification_recipients[]
+  lookup_values_notifications_source_entity_type_idTolookup_values lookup_values?            @relation("notifications_source_entity_type_idTolookup_values", fields: [source_entity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notification_templates                                           notification_templates?   @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lookup_values_notifications_type_idTolookup_values               lookup_values             @relation("notifications_type_idTolookup_values", fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([source_entity_type_id, source_entity_id], map: "ix_notifications_source")
+  @@index([type_id, created_at(sort: Desc)], map: "ix_notifications_type_time")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model password_reset_tokens {
+  id           BigInt    @id @default(autoincrement())
+  user_id      BigInt
+  token_hash   String    @unique(map: "uq_password_reset_token_hash")
+  requested_ip String?   @db.Inet
+  expires_at   DateTime  @db.Timestamptz(6)
+  used_at      DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "ix_password_reset_tokens_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model permissions {
+  id               BigInt             @id @default(autoincrement())
+  code             String             @unique(map: "uq_permissions_code") @db.VarChar(96)
+  module           String             @db.VarChar(64)
+  name             String             @db.VarChar(128)
+  description      String?
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  role_permissions role_permissions[]
+
+  @@index([module], map: "ix_permissions_module")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This table contains exclusion constraints and requires additional setup for migrations. Visit https://pris.ly/d/exclusion-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model resource_bookings {
+  id                                                  BigInt                       @id @default(autoincrement())
+  asset_id                                            BigInt
+  booked_by_user_id                                   BigInt
+  booking_for_department_id                           BigInt?
+  start_time                                          DateTime                     @db.Timestamptz(6)
+  end_time                                            DateTime                     @db.Timestamptz(6)
+  during                                              Unsupported("tstzrange")?    @default(dbgenerated("tstzrange(start_time, end_time, '[)'::text)"))
+  status_id                                           BigInt
+  is_active                                           Boolean                      @default(true)
+  purpose                                             String?
+  recurrence_rule                                     String?                      @db.VarChar(255)
+  parent_booking_id                                   BigInt?
+  cancelled_by_user_id                                BigInt?
+  cancelled_at                                        DateTime?                    @db.Timestamptz(6)
+  cancellation_reason                                 String?
+  created_at                                          DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                                          DateTime                     @default(now()) @db.Timestamptz(6)
+  booking_reminders                                   booking_reminders[]
+  booking_reschedule_history                          booking_reschedule_history[]
+  assets                                              assets                       @relation(fields: [asset_id], references: [id], onUpdate: NoAction)
+  users_resource_bookings_booked_by_user_idTousers    users                        @relation("resource_bookings_booked_by_user_idTousers", fields: [booked_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                                         departments?                 @relation(fields: [booking_for_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_resource_bookings_cancelled_by_user_idTousers users?                       @relation("resource_bookings_cancelled_by_user_idTousers", fields: [cancelled_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resource_bookings                                   resource_bookings?           @relation("resource_bookingsToresource_bookings", fields: [parent_booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_resource_bookings                             resource_bookings[]          @relation("resource_bookingsToresource_bookings")
+  lookup_values                                       lookup_values                @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([booked_by_user_id], map: "ix_bookings_booked_by")
+  @@index([status_id, start_time], map: "ix_bookings_status_start")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model role_permissions {
+  role_id       BigInt
+  permission_id BigInt
+  granted_at    DateTime    @default(now()) @db.Timestamptz(6)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, permission_id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model roles {
+  id                BigInt              @id @default(autoincrement())
+  code              String              @unique(map: "uq_roles_code") @db.VarChar(32)
+  name              String              @db.VarChar(64)
+  description       String?
+  parent_role_id    BigInt?
+  is_active         Boolean             @default(true)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
+  approval_requests approval_requests[]
+  role_permissions  role_permissions[]
+  roles             roles?              @relation("rolesToroles", fields: [parent_role_id], references: [id], onUpdate: NoAction)
+  other_roles       roles[]             @relation("rolesToroles")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_sessions {
+  id                 BigInt    @id @default(autoincrement())
+  user_id            BigInt
+  session_token_hash String    @unique(map: "uq_user_sessions_token")
+  ip_address         String?   @db.Inet
+  user_agent         String?
+  issued_at          DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at         DateTime  @db.Timestamptz(6)
+  revoked_at         DateTime? @db.Timestamptz(6)
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                                                                      BigInt                       @id @default(autoincrement())
+  public_id                                                               String                       @unique(map: "uq_users_public_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                                   String                       @unique(map: "uq_users_email") @db.Citext
+  password_hash                                                           String
+  password_algo                                                           String                       @default("bcrypt") @db.VarChar(32)
+  password_changed_at                                                     DateTime?                    @db.Timestamptz(6)
+  email_verified_at                                                       DateTime?                    @db.Timestamptz(6)
+  account_status_id                                                       BigInt
+  failed_login_count                                                      Int                          @default(0) @db.SmallInt
+  last_login_at                                                           DateTime?                    @db.Timestamptz(6)
+  created_at                                                              DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                                                              DateTime                     @default(now()) @db.Timestamptz(6)
+  deleted_at                                                              DateTime?                    @db.Timestamptz(6)
+  activity_logs                                                           activity_logs[]
+  app_settings                                                            app_settings[]
+  approval_history                                                        approval_history[]
+  approval_requests_approval_requests_decided_by_user_idTousers           approval_requests[]          @relation("approval_requests_decided_by_user_idTousers")
+  approval_requests_approval_requests_requested_by_user_idTousers         approval_requests[]          @relation("approval_requests_requested_by_user_idTousers")
+  asset_allocations                                                       asset_allocations[]
+  asset_condition_history                                                 asset_condition_history[]
+  asset_lifecycle_events                                                  asset_lifecycle_events[]
+  asset_location_history                                                  asset_location_history[]
+  asset_return_requests_asset_return_requests_inspected_by_user_idTousers asset_return_requests[]      @relation("asset_return_requests_inspected_by_user_idTousers")
+  asset_return_requests_asset_return_requests_requested_by_user_idTousers asset_return_requests[]      @relation("asset_return_requests_requested_by_user_idTousers")
+  asset_transfer_requests                                                 asset_transfer_requests[]
+  attachments                                                             attachments[]
+  audit_cycle_auditors                                                    audit_cycle_auditors[]
+  audit_cycles_audit_cycles_closed_by_user_idTousers                      audit_cycles[]               @relation("audit_cycles_closed_by_user_idTousers")
+  audit_cycles_audit_cycles_created_by_user_idTousers                     audit_cycles[]               @relation("audit_cycles_created_by_user_idTousers")
+  audit_discrepancies                                                     audit_discrepancies[]
+  booking_reschedule_history                                              booking_reschedule_history[]
+  department_head_history                                                 department_head_history[]
+  employees                                                               employees?
+  login_history                                                           login_history[]
+  maintenance_requests_maintenance_requests_approved_by_user_idTousers    maintenance_requests[]       @relation("maintenance_requests_approved_by_user_idTousers")
+  maintenance_requests_maintenance_requests_raised_by_user_idTousers      maintenance_requests[]       @relation("maintenance_requests_raised_by_user_idTousers")
+  maintenance_status_history                                              maintenance_status_history[]
+  notification_recipients                                                 notification_recipients[]
+  password_reset_tokens                                                   password_reset_tokens[]
+  resource_bookings_resource_bookings_booked_by_user_idTousers            resource_bookings[]          @relation("resource_bookings_booked_by_user_idTousers")
+  resource_bookings_resource_bookings_cancelled_by_user_idTousers         resource_bookings[]          @relation("resource_bookings_cancelled_by_user_idTousers")
+  user_sessions                                                           user_sessions[]
+  lookup_values                                                           lookup_values                @relation(fields: [account_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([account_status_id], map: "ix_users_account_status")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceStatus {
+  PENDING_PAYMENT
+  PAID
+  OVERDUE
+}
+
+enum POStatus {
+  DRAFT
+  SENT
+  ACKNOWLEDGED
+  CLOSED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SUBMITTED
+  SELECTED
+  REJECTED
+}
+
+enum RFQStatus {
+  DRAFT
+  OPEN
+  IN_REVIEW
+  CLOSED
+}
+
+enum Role {
+  ADMIN
+  PROCUREMENT_OFFICER
+  VENDOR
+  MANAGER
+}
+
+enum VendorStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
 }

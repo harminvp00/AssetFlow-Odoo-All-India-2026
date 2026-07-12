@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 function AuthLayout() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-950 to-brand-900 p-4">
+    <div className="min-h-screen w-full bg-white dark:bg-slate-950">
       <Outlet />
     </div>
   );

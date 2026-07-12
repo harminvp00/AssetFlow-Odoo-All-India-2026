@@ -3,29 +3,27 @@ const { prisma } = require('../../config/database');
 const findByEmail = async (email) => {
   return prisma.user.findUnique({
     where: { email },
-    include: {
-      department: true,
-    },
   });
 };
 
 const findById = async (id) => {
   return prisma.user.findUnique({
     where: { id },
-    include: {
-      department: true,
-    },
   });
 };
 
 const save = async (data) => {
+  const parts = (data.name || '').trim().split(/\s+/);
+  const firstName = parts[0] || 'Unknown';
+  const lastName = parts.slice(1).join(' ') || 'User';
+
   return prisma.user.create({
     data: {
       email: data.email,
       password: data.password,
-      name: data.name,
-      role: 'EMPLOYEE',
-      status: true,
+      firstName,
+      lastName,
+      role: 'PROCUREMENT_OFFICER',
     },
   });
 };

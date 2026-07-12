@@ -44,11 +44,6 @@ const login = async (email, password) => {
     throw error;
   }
 
-  if (!user.status) {
-    const error = new Error('User account is inactive. Please contact administration.');
-    error.statusCode = 403;
-    throw error;
-  }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
@@ -78,11 +73,6 @@ const refreshAccessToken = async (token) => {
       throw error;
     }
 
-    if (!user.status) {
-      const error = new Error('User account is inactive.');
-      error.statusCode = 403;
-      throw error;
-    }
 
     const accessToken = generateAccessToken(user);
     return { accessToken };

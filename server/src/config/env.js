@@ -4,8 +4,8 @@ const { z } = require('zod');
 const path = require('path');
 
 // Load environment variables (local server or root workspace fallback)
-dotenv.config();
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ override: true });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env'), override: true });
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
