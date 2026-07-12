@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../../api/apiClient';
 import toast from 'react-hot-toast';
 
 export default function AuditDetailsPage() {
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user && user.role === 'ADMIN';
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -127,26 +130,28 @@ export default function AuditDetailsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 pl-9 md:pl-0">
-          {cycle.status === 'DRAFT' && (
-            <button
-              onClick={handleStartCycle}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
-            >
-              Start Cycle
-            </button>
-          )}
+        {isAdmin && (
+          <div className="flex items-center gap-3 pl-9 md:pl-0">
+            {cycle.status === 'DRAFT' && (
+              <button
+                onClick={handleStartCycle}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+              >
+                Start Cycle
+              </button>
+            )}
 
-          {cycle.status === 'ACTIVE' && (
-            <button
-              onClick={handleCloseCycle}
-              disabled={submitting}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm disabled:opacity-50"
-            >
-              {submitting ? 'Closing...' : 'Close Audit Cycle'}
-            </button>
-          )}
-        </div>
+            {cycle.status === 'ACTIVE' && (
+              <button
+                onClick={handleCloseCycle}
+                disabled={submitting}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm disabled:opacity-50"
+              >
+                {submitting ? 'Closing...' : 'Close Audit Cycle'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Discrepancy Banner */}
@@ -214,38 +219,42 @@ export default function AuditDetailsPage() {
                     </td>
                     <td className="py-4 px-4 text-right">
                       {cycle.status === 'ACTIVE' ? (
-                        <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-1 bg-slate-50 dark:bg-slate-950">
-                          <button
-                            onClick={() => handleVerify(asset.id, 'VERIFIED')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                              asset.status === 'VERIFIED'
-                                ? 'bg-emerald-600 text-white shadow-sm'
-                                : 'text-slate-500 hover:text-emerald-600'
-                            }`}
-                          >
-                            Verified
-                          </button>
-                          <button
-                            onClick={() => handleVerify(asset.id, 'DAMAGED')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                              asset.status === 'DAMAGED'
-                                ? 'bg-amber-500 text-white shadow-sm'
-                                : 'text-slate-500 hover:text-amber-500'
-                            }`}
-                          >
-                            Damaged
-                          </button>
-                          <button
-                            onClick={() => handleVerify(asset.id, 'MISSING')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                              asset.status === 'MISSING'
-                                ? 'bg-rose-600 text-white shadow-sm'
-                                : 'text-slate-500 hover:text-rose-600'
-                            }`}
-                          >
-                            Missing
-                          </button>
-                        </div>
+                        user && (user.role === 'ADMIN' || (cycle.auditors && cycle.auditors.some(a => a.id === user.id))) ? (
+                          <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-1 bg-slate-50 dark:bg-slate-950">
+                            <button
+                              onClick={() => handleVerify(asset.id, 'VERIFIED')}
+                              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                asset.status === 'VERIFIED'
+                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-emerald-600'
+                              }`}
+                            >
+                              Verified
+                            </button>
+                            <button
+                              onClick={() => handleVerify(asset.id, 'DAMAGED')}
+                              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                asset.status === 'DAMAGED'
+                                  ? 'bg-amber-500 text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-amber-500'
+                              }`}
+                            >
+                              Damaged
+                            </button>
+                            <button
+                              onClick={() => handleVerify(asset.id, 'MISSING')}
+                              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                asset.status === 'MISSING'
+                                  ? 'bg-rose-600 text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-rose-600'
+                              }`}
+                            >
+                              Missing
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">Assigned auditors only</span>
+                        )
                       ) : (
                         <span className="text-xs text-slate-400">Audit closed / inactive</span>
                       )}
