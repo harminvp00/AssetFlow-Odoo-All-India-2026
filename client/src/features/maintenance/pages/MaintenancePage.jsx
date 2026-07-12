@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import apiClient from '../../../api/apiClient';
 import toast from 'react-hot-toast';
 import FileUpload from '../../assets/components/FileUpload';
 
 export default function MaintenancePage() {
+  const { user } = useSelector((state) => state.auth);
+  const isStaff = user && ['ADMIN', 'MANAGER'].includes(user.role);
+
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -233,7 +237,7 @@ export default function MaintenancePage() {
               )}
 
               <div className="pt-2 border-t border-slate-50 dark:border-slate-800/40 flex items-center justify-end gap-2">
-                {req.status === 'PENDING' && (
+                {isStaff && req.status === 'PENDING' && (
                   <>
                     <button
                       onClick={() => handleReject(req.id)}
@@ -250,7 +254,7 @@ export default function MaintenancePage() {
                   </>
                 )}
 
-                {req.status === 'APPROVED' && !req.technicianId && (
+                {isStaff && req.status === 'APPROVED' && !req.technicianId && (
                   <button
                     onClick={() => { setSelectedReq(req); setShowAssignModal(true); }}
                     className="w-full px-2 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-lg transition-colors"
@@ -259,7 +263,7 @@ export default function MaintenancePage() {
                   </button>
                 )}
 
-                {req.status === 'APPROVED' && req.technicianId && (
+                {(isStaff || (user && user.id === req.technicianId)) && req.status === 'APPROVED' && req.technicianId && (
                   <button
                     onClick={() => handleStartWork(req.id)}
                     className="w-full px-2 py-1 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
@@ -268,7 +272,7 @@ export default function MaintenancePage() {
                   </button>
                 )}
 
-                {req.status === 'IN_PROGRESS' && (
+                {(isStaff || (user && user.id === req.technicianId)) && req.status === 'IN_PROGRESS' && (
                   <button
                     onClick={() => { setSelectedReq(req); setShowResolveModal(true); }}
                     className="w-full px-2 py-1 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg transition-colors"

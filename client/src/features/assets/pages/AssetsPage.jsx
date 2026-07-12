@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Laptop, Plus, Tag, Layers, MapPin, Building2, ShieldAlert } from 'lucide-react';
 import apiClient from '../../../api/apiClient';
 import toast from 'react-hot-toast';
 
 export default function AssetsPage() {
+  const { user } = useSelector((state) => state.auth);
+  const canRegister = user && ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'].includes(user.role);
+
   const [assets, setAssets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -107,13 +111,15 @@ export default function AssetsPage() {
           <Laptop className="h-8 w-8" />
           Assets Registry
         </h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-900 dark:hover:bg-slate-100 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          Register Asset
-        </button>
+        {canRegister && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-900 dark:hover:bg-slate-100 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            Register Asset
+          </button>
+        )}
       </div>
 
       {assets.length === 0 ? (

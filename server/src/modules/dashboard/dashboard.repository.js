@@ -5,7 +5,7 @@ const findAll = async () => {
     prisma.asset.count(),
     prisma.allocation.count({ where: { status: 'ACTIVE' } }),
     prisma.maintenanceRequest.count({ where: { status: 'PENDING' } }),
-    prisma.auditCycle.count({ where: { status: 'IN_PROGRESS' } }),
+    prisma.auditCycle.count({ where: { status: 'ACTIVE' } }),
   ]);
 
   return [

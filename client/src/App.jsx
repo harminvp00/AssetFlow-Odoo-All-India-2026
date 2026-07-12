@@ -14,6 +14,7 @@ import {
   OAuthSuccessPage,
   ProtectedRoute,
   GuestRoute,
+  RoleRoute,
   refreshUserToken,
   getCurrentUser,
   syncToken,
@@ -29,11 +30,7 @@ import { CategoriesPage } from './features/categories';
 import { AllocationsPage } from './features/allocations';
 import { TransfersPage } from './features/transfers';
 import { BookingsPage } from './features/bookings';
-import { MaintenancePage } from './features/maintenance';
-import { AuditsPage } from './features/audits';
-import { AttachmentsPage } from './features/attachments';
 import { NotificationsPage } from './features/notifications';
-import { ReportsPage } from './features/reports';
 import { SettingsPage } from './features/settings';
 import { LogsPage } from './features/logs';
 import { AttachmentsPage } from './features/attachments';
@@ -126,22 +123,22 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Feature Modules */}
-        <Route path="/employees" element={<EmployeesPage />} />
-        <Route path="/departments" element={<DepartmentsPage />} />
-        <Route path="/locations" element={<LocationsPage />} />
-        <Route path="/categories" element={<CategoriesPage />} />
-        <Route path="/assets" element={<AssetsPage />} />
-        <Route path="/attachments" element={<AttachmentsPage />} />
-        <Route path="/allocations" element={<AllocationsPage />} />
-        <Route path="/transfers" element={<TransfersPage />} />
-        <Route path="/bookings" element={<BookingsPage />} />
-        <Route path="/maintenance" element={<MaintenancePage />} />
-        <Route path="/audits" element={<AuditsPage />} />
-        <Route path="/audits/:id" element={<AuditDetailsPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/logs" element={<LogsPage />} />
+        <Route path="/employees" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER']}><EmployeesPage /></RoleRoute>} />
+        <Route path="/departments" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER']}><DepartmentsPage /></RoleRoute>} />
+        <Route path="/locations" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER']}><LocationsPage /></RoleRoute>} />
+        <Route path="/categories" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><CategoriesPage /></RoleRoute>} />
+        <Route path="/assets" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><AssetsPage /></RoleRoute>} />
+        <Route path="/attachments" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR']}><AttachmentsPage /></RoleRoute>} />
+        <Route path="/allocations" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><AllocationsPage /></RoleRoute>} />
+        <Route path="/transfers" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><TransfersPage /></RoleRoute>} />
+        <Route path="/bookings" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><BookingsPage /></RoleRoute>} />
+        <Route path="/maintenance" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><MaintenancePage /></RoleRoute>} />
+        <Route path="/audits" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><AuditsPage /></RoleRoute>} />
+        <Route path="/audits/:id" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><AuditDetailsPage /></RoleRoute>} />
+        <Route path="/notifications" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR']}><NotificationsPage /></RoleRoute>} />
+        <Route path="/reports" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER']}><ReportsPage /></RoleRoute>} />
+        <Route path="/settings" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR']}><SettingsPage /></RoleRoute>} />
+        <Route path="/logs" element={<RoleRoute allowedRoles={['ADMIN', 'MANAGER']}><LogsPage /></RoleRoute>} />
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

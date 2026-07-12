@@ -52,22 +52,22 @@ function MainLayout() {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Assets', href: '/assets', icon: Laptop },
-    { name: 'Employees', href: '/employees', icon: Users },
-    { name: 'Departments', href: '/departments', icon: Building2 },
-    { name: 'Locations', href: '/locations', icon: MapPin },
-    { name: 'Categories', href: '/categories', icon: Tags },
-    { name: 'Allocations', href: '/allocations', icon: CheckSquare },
-    { name: 'Transfers', href: '/transfers', icon: ArrowLeftRight },
-    { name: 'Bookings', href: '/bookings', icon: Bookmark },
-    { name: 'Maintenance', href: '/maintenance', icon: Wrench },
-    { name: 'Audits', href: '/audits', icon: ShieldCheck },
-    { name: 'Attachments', href: '/attachments', icon: Paperclip },
-    { name: 'Notifications', href: '/notifications', icon: Bell },
-    { name: 'Reports', href: '/reports', icon: BarChart3 },
-    { name: 'Settings', href: '/settings', icon: SettingsIcon },
-    { name: 'Activity Logs', href: '/logs', icon: History },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { name: 'Assets', href: '/assets', icon: Laptop, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Employees', href: '/employees', icon: Users, roles: ['ADMIN', 'MANAGER'] },
+    { name: 'Departments', href: '/departments', icon: Building2, roles: ['ADMIN', 'MANAGER'] },
+    { name: 'Locations', href: '/locations', icon: MapPin, roles: ['ADMIN', 'MANAGER'] },
+    { name: 'Categories', href: '/categories', icon: Tags, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Allocations', href: '/allocations', icon: CheckSquare, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Transfers', href: '/transfers', icon: ArrowLeftRight, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Bookings', href: '/bookings', icon: Bookmark, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Maintenance', href: '/maintenance', icon: Wrench, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Audits', href: '/audits', icon: ShieldCheck, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Attachments', href: '/attachments', icon: Paperclip, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { name: 'Notifications', href: '/notifications', icon: Bell, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { name: 'Settings', href: '/settings', icon: SettingsIcon, roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { name: 'Activity Logs', href: '/logs', icon: History, roles: ['ADMIN', 'MANAGER'] },
   ];
 
   return (
@@ -88,24 +88,26 @@ function MainLayout() {
 
         {/* Navigation list */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
-                  isActive
-                    ? 'bg-white text-slate-950 shadow-md font-bold'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.name}
-              </Link>
-            );
-          })}
+          {navigation
+            .filter((item) => !item.roles || item.roles.includes(user?.role))
+            .map((item) => {
+              const isActive = location.pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
+                    isActive
+                      ? 'bg-white text-slate-950 shadow-md font-bold'
+                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.name}
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Footer actions */}
