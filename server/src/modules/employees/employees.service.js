@@ -4,11 +4,18 @@ const getAll = async () => {
   return repository.findAll();
 };
 
-const create = async (data) => {
-  return repository.save(data);
+const update = async (id, data) => {
+  const employee = await repository.findById(id);
+  if (!employee) {
+    const error = new Error('Employee not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return repository.update(id, data);
 };
 
 module.exports = {
   getAll,
-  create,
+  update,
 };
