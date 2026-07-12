@@ -1,5 +1,6 @@
 module.exports = {
-  SUCCESS_RETRIEVED: 'Notifications entries retrieved successfully.',
-  SUCCESS_CREATED: 'Notifications created successfully.',
-  ERROR_NOT_FOUND: 'Notifications entry not found.',
+  SUCCESS_RETRIEVED: 'Notifications retrieved successfully.',
+  SUCCESS_CREATED: 'Notification created successfully.',
+  SUCCESS_UPDATED: 'Notification marked as read successfully.',
+  ERROR_NOT_FOUND: 'Notification not found.',
 };
