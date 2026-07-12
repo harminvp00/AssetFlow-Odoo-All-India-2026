@@ -73,21 +73,21 @@ function MainLayout() {
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
+      <aside className="w-64 flex-shrink-0 border-r border-slate-800 bg-slate-950 flex flex-col text-slate-400">
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-lg">
-              A
+        <div className="h-16 flex items-center px-6 border-b border-slate-800">
+          <Link to="/dashboard" className="flex items-center gap-2.5">
+            <span className="h-8 w-8 rounded bg-white flex items-center justify-center text-slate-950 font-bold text-sm">
+              AF
             </span>
-            <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
+            <span className="text-sm font-semibold tracking-wider text-white">
               AssetFlow
             </span>
           </Link>
         </div>
 
         {/* Navigation list */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
@@ -95,10 +95,10 @@ function MainLayout() {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
                   isActive
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/10 dark:text-emerald-500'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-white text-slate-950 shadow-md font-bold'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -109,10 +109,10 @@ function MainLayout() {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="p-4 border-t border-slate-800">
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/10 rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-3 w-full px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-red-400 hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             Sign Out
@@ -134,7 +134,7 @@ function MainLayout() {
                 {formatRole(user?.role) || 'Loading...'}
               </span>
             </div>
-            <div className="h-9 w-9 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
+            <div className="h-9 w-9 rounded-full bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center font-bold text-sm">
               {getInitials(user?.name)}
             </div>
           </div>

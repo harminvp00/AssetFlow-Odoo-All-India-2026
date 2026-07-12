@@ -20,6 +20,9 @@ import {
   clearAuth,
 } from './features/auth';
 
+import { AllocationsPage } from './features/allocations';
+import { TransfersPage } from './features/transfers';
+
 // Feature Placeholder Pages
 const DashboardPlaceholder = () => (
   <div className="space-y-6">
@@ -148,8 +151,8 @@ function App() {
         <Route path="/categories" element={<FallbackPage name="Categories" />} />
         <Route path="/assets" element={<FallbackPage name="Assets" />} />
         <Route path="/attachments" element={<FallbackPage name="Attachments" />} />
-        <Route path="/allocations" element={<FallbackPage name="Allocations" />} />
-        <Route path="/transfers" element={<FallbackPage name="Transfers" />} />
+        <Route path="/allocations" element={<AllocationsPage />} />
+        <Route path="/transfers" element={<TransfersPage />} />
         <Route path="/bookings" element={<FallbackPage name="Bookings" />} />
         <Route path="/maintenance" element={<FallbackPage name="Maintenance" />} />
         <Route path="/audits" element={<FallbackPage name="Audits" />} />
