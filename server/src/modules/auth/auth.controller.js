@@ -92,10 +92,39 @@ const me = async (req, res, next) => {
   }
 };
 
+const googleCallback = async (req, res, next) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=auth_failed`);
+    }
+
+    if (!user.status) {
+      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=user_inactive`);
+    }
+
+    const { accessToken, refreshToken } = await service.socialLogin(user);
+
+    // Set refresh token as secure cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Redirect to frontend dashboard with access token in query
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/success?token=${accessToken}`);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   signup,
   login,
   logout,
   refresh,
   me,
+  googleCallback,
 };

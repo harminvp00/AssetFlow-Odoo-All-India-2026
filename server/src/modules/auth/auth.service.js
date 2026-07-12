@@ -93,8 +93,18 @@ const refreshAccessToken = async (token) => {
   }
 };
 
+const socialLogin = async (user) => {
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+  return {
+    accessToken,
+    refreshToken,
+  };
+};
+
 module.exports = {
   register,
   login,
   refreshAccessToken,
+  socialLogin,
 };
