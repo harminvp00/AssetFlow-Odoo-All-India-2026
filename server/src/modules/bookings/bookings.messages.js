@@ -1,5 +1,6 @@
 module.exports = {
-  SUCCESS_RETRIEVED: 'Bookings entries retrieved successfully.',
-  SUCCESS_CREATED: 'Bookings created successfully.',
-  ERROR_NOT_FOUND: 'Bookings entry not found.',
+  SUCCESS_RETRIEVED: 'Bookings retrieved successfully.',
+  SUCCESS_CREATED: 'Booking created successfully.',
+  SUCCESS_CANCELLED: 'Booking cancelled successfully.',
+  ERROR_NOT_FOUND: 'Booking not found.',
 };

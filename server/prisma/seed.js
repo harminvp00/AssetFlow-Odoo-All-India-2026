@@ -12,7 +12,8 @@ async function main() {
     update: { password: passwordHash },
     create: {
       email: 'admin@assetflow.com',
-      name: 'System Admin',
+      firstName: 'System',
+      lastName: 'Admin',
       password: passwordHash,
       role: 'ADMIN',
     },
@@ -81,10 +82,13 @@ async function main() {
     update: { password: passwordHash },
     create: {
       email: 'priya@assetflow.com',
-      name: 'Priya Shah',
+      firstName: 'Priya',
+      lastName: 'Shah',
       password: passwordHash,
-      role: 'EMPLOYEE',
-      departmentId: engDept.id,
+      role: 'PROCUREMENT_OFFICER',
+      departments: {
+        connect: { id: engDept.id },
+      },
     },
   });
 
@@ -93,10 +97,13 @@ async function main() {
     update: { password: passwordHash },
     create: {
       email: 'arjun@assetflow.com',
-      name: 'Arjun Nair',
+      firstName: 'Arjun',
+      lastName: 'Nair',
       password: passwordHash,
       role: 'MANAGER',
-      departmentId: mktDept.id,
+      departments: {
+        connect: { id: mktDept.id },
+      },
     },
   });
 
@@ -105,10 +112,13 @@ async function main() {
     update: { password: passwordHash },
     create: {
       email: 'rohan@assetflow.com',
-      name: 'Rohan Sharma',
+      firstName: 'Rohan',
+      lastName: 'Sharma',
       password: passwordHash,
-      role: 'DEPARTMENT_HEAD',
-      departmentId: prodDept.id,
+      role: 'MANAGER',
+      departments: {
+        connect: { id: prodDept.id },
+      },
     },
   });
 
@@ -117,10 +127,13 @@ async function main() {
     update: { password: passwordHash },
     create: {
       email: 'aditi@assetflow.com',
-      name: 'Aditi Verma',
+      firstName: 'Aditi',
+      lastName: 'Verma',
       password: passwordHash,
-      role: 'EMPLOYEE',
-      departmentId: designDept.id,
+      role: 'PROCUREMENT_OFFICER',
+      departments: {
+        connect: { id: designDept.id },
+      },
     },
   });
 

@@ -1,12 +1,23 @@
 const { z } = require('zod');
 
-const create = z.object({
-  body: z.object({
-    // Basic validation schema
-    name: z.string().min(1, 'Name is required'),
+const getAll = z.object({
+  query: z.object({
+    status: z.enum(['read', 'unread']).optional(),
+    page: z.preprocess((val) => (val ? parseInt(val, 10) : undefined), z.number().int().positive().optional()),
+    limit: z.preprocess((val) => (val ? parseInt(val, 10) : undefined), z.number().int().positive().optional()),
+    sortBy: z.string().optional(),
+    order: z.enum(['asc', 'desc']).optional(),
+    search: z.string().optional(),
+  }).optional(),
+});
+
+const getById = z.object({
+  params: z.object({
+    id: z.string().uuid('Notification ID must be a valid UUID.'),
   }),
 });
 
 module.exports = {
-  create,
+  getAll,
+  getById,
 };

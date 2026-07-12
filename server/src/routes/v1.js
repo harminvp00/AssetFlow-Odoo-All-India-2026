@@ -36,5 +36,6 @@ router.use('/notifications', notificationsRouter);
 router.use('/reports', reportsRouter);
 router.use('/settings', settingsRouter);
 router.use('/logs', logsRouter);
+router.use('/activity-logs', logsRouter);
 
 module.exports = router;
