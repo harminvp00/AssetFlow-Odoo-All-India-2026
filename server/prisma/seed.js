@@ -7,11 +7,13 @@ async function main() {
   // Create default admin user if not exists
   const admin = await prisma.user.upsert({
     where: { email: 'admin@assetflow.com' },
-    update: {},
+    update: {
+      password: '$2a$10$pvgd9XdiD9SlMXVq4Wj10OgDMcKn6Tv/G8459KnZigXNe1YaeoMla'
+    },
     create: {
       email: 'admin@assetflow.com',
       name: 'System Admin',
-      password: 'admin_password_hash_here',
+      password: '$2a$10$pvgd9XdiD9SlMXVq4Wj10OgDMcKn6Tv/G8459KnZigXNe1YaeoMla',
       role: 'ADMIN',
     },
   });

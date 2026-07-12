@@ -5,6 +5,7 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const passport = require('passport');
+const path = require('path');
 
 const env = require('./config/env');
 const rateLimiter = require('./middlewares/rateLimit.middleware');
@@ -40,6 +41,9 @@ if (env.NODE_ENV !== 'test') {
 
 // Passport initialization
 app.use(passport.initialize());
+
+// Static uploads folder for local fallback storage
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API Route Mount
 app.use('/api', routes);
