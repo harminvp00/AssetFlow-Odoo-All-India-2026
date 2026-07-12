@@ -15,6 +15,7 @@ model User {
   password       String
   firstName      String
   lastName       String
+  name           String?
   phone          String?
   role           Role            @default(PROCUREMENT_OFFICER)
   country        String?

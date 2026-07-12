@@ -9,11 +9,12 @@ async function main() {
   // 1. Create default admin user
   const admin = await prisma.user.upsert({
     where: { email: 'admin@assetflow.com' },
-    update: { password: passwordHash },
+    update: { password: passwordHash, name: 'System Admin' },
     create: {
       email: 'admin@assetflow.com',
       firstName: 'System',
       lastName: 'Admin',
+      name: 'System Admin',
       password: passwordHash,
       role: 'ADMIN',
     },
@@ -79,11 +80,12 @@ async function main() {
   // 5. Create Staff Users
   const priya = await prisma.user.upsert({
     where: { email: 'priya@assetflow.com' },
-    update: { password: passwordHash },
+    update: { password: passwordHash, name: 'Priya Shah' },
     create: {
       email: 'priya@assetflow.com',
       firstName: 'Priya',
       lastName: 'Shah',
+      name: 'Priya Shah',
       password: passwordHash,
       role: 'PROCUREMENT_OFFICER',
       departments: {
@@ -94,11 +96,12 @@ async function main() {
 
   const arjun = await prisma.user.upsert({
     where: { email: 'arjun@assetflow.com' },
-    update: { password: passwordHash },
+    update: { password: passwordHash, name: 'Arjun Nair' },
     create: {
       email: 'arjun@assetflow.com',
       firstName: 'Arjun',
       lastName: 'Nair',
+      name: 'Arjun Nair',
       password: passwordHash,
       role: 'MANAGER',
       departments: {
@@ -109,11 +112,12 @@ async function main() {
 
   const rohan = await prisma.user.upsert({
     where: { email: 'rohan@assetflow.com' },
-    update: { password: passwordHash },
+    update: { password: passwordHash, name: 'Rohan Sharma' },
     create: {
       email: 'rohan@assetflow.com',
       firstName: 'Rohan',
       lastName: 'Sharma',
+      name: 'Rohan Sharma',
       password: passwordHash,
       role: 'MANAGER',
       departments: {
@@ -124,11 +128,12 @@ async function main() {
 
   const aditi = await prisma.user.upsert({
     where: { email: 'aditi@assetflow.com' },
-    update: { password: passwordHash },
+    update: { password: passwordHash, name: 'Aditi Verma' },
     create: {
       email: 'aditi@assetflow.com',
       firstName: 'Aditi',
       lastName: 'Verma',
+      name: 'Aditi Verma',
       password: passwordHash,
       role: 'PROCUREMENT_OFFICER',
       departments: {
