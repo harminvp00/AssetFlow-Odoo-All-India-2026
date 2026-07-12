@@ -6,10 +6,10 @@ AssetFlow is a clean-architecture Enterprise Asset & Resource Management System 
 
 ## 👥 Developers Team
 
-- **Ashish Gokani** — Lead Backend Architect
-- **Ashish Vekariya** — Full Stack Engineer
-- **Krish Solanki** — Frontend UI/UX Engineer
-- **Harmin Vekariya** — DevOps & Database Administrator
+- **Ashish Gokani** — Lead Backend Architect: Designed and implemented complete backend architecture, REST APIs, JWT authentication, role-based access control, and database schema with Prisma ORM.
+- **Ashish Vekariya** — Full Stack Engineer: Built API integrations, middleware layers, validation schemas, and connected frontend with backend services.
+- **Krish Solanki** —  Frontend UI/UX Engineer: Designed Apple & Cuberto-inspired UI with Figma, implemented Framer Motion & GSAP animations, Tailwind CSS styling, and responsive layouts across 16 modules
+- **Harmin Vekariya** — DevOps & Database Administrator: Managed PostgreSQL database setup, Prisma migrations, deployment pipelines, and cloud infrastructure configuration.
 
 ---
 
