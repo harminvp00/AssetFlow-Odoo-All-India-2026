@@ -1,8 +1,14 @@
-const toDTO = (model) => {
-  if (!model) return null;
+const toDTO = (user) => {
+  if (!user) return null;
   return {
-    ...model,
-    // Add DTO mappings here
+    id: user.id,
+    email: user.email,
+    name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+    role: user.role,
+    status: true,
+    departmentId: null,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 };
 

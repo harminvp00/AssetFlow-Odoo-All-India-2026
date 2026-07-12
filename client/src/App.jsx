@@ -1,44 +1,47 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
 
-// Direct Page Placeholders
-const LoginPlaceholder = () => (
-  <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-dark-900 rounded-lg shadow-xl max-w-md w-full">
-    <h2 className="text-2xl font-bold mb-4">AssetFlow Sign In</h2>
-    <p className="text-slate-500 mb-6 text-center text-sm">
-      Enterprise Asset & Resource Management System
-    </p>
-    <button className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
-      Sign in with Google
-    </button>
-  </div>
-);
+// Features (Auth components and pages)
+import {
+  LoginPage,
+  SignupPage,
+  OAuthSuccessPage,
+  ProtectedRoute,
+  GuestRoute,
+  refreshUserToken,
+  getCurrentUser,
+  syncToken,
+  clearAuth,
+} from './features/auth';
 
+// Feature Placeholder Pages
 const DashboardPlaceholder = () => (
   <div className="space-y-6">
     <div className="flex items-center justify-between">
       <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-      <span className="text-sm bg-brand-100 text-brand-700 px-3 py-1 rounded-full font-medium">
+      <span className="text-sm bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 px-3 py-1 rounded-full font-semibold">
         Active Session
       </span>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {[
-        { title: 'Total Assets', val: '1,280', color: 'border-l-brand-500' },
-        { title: 'Active Allocations', val: '840', color: 'border-l-blue-500' },
+        { title: 'Total Assets', val: '1,280', color: 'border-l-emerald-500' },
+        { title: 'Active Allocations', val: '840', color: 'border-l-teal-500' },
         { title: 'Pending Maintenance', val: '18', color: 'border-l-amber-500' },
-        { title: 'System Health', val: '99.8%', color: 'border-l-violet-500' },
+        { title: 'System Health', val: '99.8%', color: 'border-l-cyan-500' },
       ].map((card, idx) => (
         <div
           key={idx}
-          className={`p-6 bg-white dark:bg-dark-900 border-l-4 ${card.color} rounded-lg shadow-sm`}
+          className={`p-6 bg-white dark:bg-slate-900 border-l-4 ${card.color} rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/60`}
         >
-          <p className="text-sm text-slate-500 font-medium">{card.title}</p>
-          <p className="text-2xl font-bold mt-2">{card.val}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{card.title}</p>
+          <p className="text-2xl font-bold mt-2 text-slate-800 dark:text-white">{card.val}</p>
         </div>
       ))}
     </div>
@@ -46,28 +49,99 @@ const DashboardPlaceholder = () => (
 );
 
 const FallbackPage = ({ name }) => (
-  <div className="p-8 bg-white dark:bg-dark-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800">
-    <h2 className="text-2xl font-bold mb-2">{name} Module</h2>
-    <p className="text-slate-500">
+  <div className="p-8 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/60">
+    <h2 className="text-2xl font-bold mb-2 text-slate-800 dark:text-white">{name} Module</h2>
+    <p className="text-slate-500 dark:text-slate-400 text-sm">
       This feature module is successfully initialized and ready for development.
     </p>
   </div>
 );
 
 function App() {
+  const dispatch = useDispatch();
+  const { isInitializing } = useSelector((state) => state.auth);
+
+  // 1. Silent Token Refresh & Load Profile on boot
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const result = await dispatch(refreshUserToken());
+      if (refreshUserToken.fulfilled.match(result)) {
+        dispatch(getCurrentUser());
+      }
+    };
+    initializeAuth();
+  }, [dispatch]);
+
+  // 2. Register Interceptor Events Listener for real-time Token changes
+  useEffect(() => {
+    const handleTokenRefreshed = (e) => {
+      dispatch(syncToken(e.detail));
+    };
+
+    const handleSessionExpired = () => {
+      dispatch(clearAuth());
+      toast.error('Session expired. Please log in again.');
+    };
+
+    window.addEventListener('auth-token-refreshed', handleTokenRefreshed);
+    window.addEventListener('auth-session-expired', handleSessionExpired);
+
+    return () => {
+      window.removeEventListener('auth-token-refreshed', handleTokenRefreshed);
+      window.removeEventListener('auth-session-expired', handleSessionExpired);
+    };
+  }, [dispatch]);
+
+  // Render a clean loader while restoring credentials
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600 dark:border-slate-800 dark:border-t-emerald-500" />
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse">
+            Loading AssetFlow...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Routes>
-      {/* Auth routes */}
+      {/* Auth / Guest Layout & Routes */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPlaceholder />} />
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <LoginPage />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <GuestRoute>
+              <SignupPage />
+            </GuestRoute>
+          }
+        />
+        {/* Google OAuth Success Redirect Landing */}
+        <Route path="/auth/success" element={<OAuthSuccessPage />} />
       </Route>
 
-      {/* App routes */}
-      <Route element={<MainLayout />}>
+      {/* Main / Protected Layout & App Routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPlaceholder />} />
 
-        {/* Core feature routing placeholders */}
+        {/* Feature Modules */}
         <Route path="/employees" element={<FallbackPage name="Employees" />} />
         <Route path="/departments" element={<FallbackPage name="Departments" />} />
         <Route path="/locations" element={<FallbackPage name="Locations" />} />

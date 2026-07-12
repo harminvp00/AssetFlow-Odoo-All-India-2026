@@ -33,14 +33,10 @@ AssetFlow is a clean-architecture Enterprise Asset & Resource Management System 
 
 ---
 
-## 🐳 Docker Note
-> [!NOTE]
-> As explicitly requested, Docker configuration and deployment options (e.g. `Dockerfile`, `docker-compose.yml`) **have been omitted** to simplify local development setups.
 
----
 
 ## 📋 Prerequisites
-- **Node.js**: `v20.x` or `v22.x`
+- **Node.js**: `v20.x` or higher
 - **npm**: `v10.x` or higher
 - **PostgreSQL**: Local running instance or cloud database
 
@@ -48,48 +44,46 @@ AssetFlow is a clean-architecture Enterprise Asset & Resource Management System 
 
 ## 🚀 Installation & Local Setup
 
-> [!IMPORTANT]
-> **Always run package installation and development commands at the WORKSPACE ROOT directory**. Do not run `npm install` inside the individual `client/` or `server/` subfolders. AssetFlow uses npm Workspaces to manage, coordinate, and link dependencies globally at the root.
-
-### 1. Install Dependencies
-At the **workspace root** directory, run:
+### 1. Initialize and install dependencies
+At the root workspace directory, run:
 ```bash
 npm install
 ```
-This automatically downloads and links all shared, backend, and frontend dependencies.
+This automatically bootstraps and installs all shared, backend, and frontend dependencies utilizing **npm workspaces**.
 
 ### 2. Configure Environment Variables
-You only need to maintain **a single `.env` file at the workspace root**. Both the frontend (Vite) and the backend (Express) are pre-configured to read their environment parameters from this file:
-
+Copy env files to configure secrets, connections, and API paths:
 ```bash
-# At the workspace root, copy the template file to .env
+# Copy root env layout
 cp .env.example .env
-```
-Open the newly created `.env` file at the root and fill in your local credentials (e.g., your PostgreSQL `DATABASE_URL`).
 
-### 3. Generate Prisma DB client bindings
-Run the Prisma generate script from the **workspace root**:
+# Copy client env configuration
+cp client/.env.example client/.env
+
+# Copy server env configuration
+cp server/.env.example server/.env
+```
+Ensure you set your database access string under `DATABASE_URL` in `server/.env`.
+
+### 3. Initialize Prisma Database Client
+Prepare the PostgreSQL database connection and run schema code generation:
 ```bash
+# Generate Prisma Client
 npm run prisma:generate
-```
 
-### 4. Optional Database migrations & seeds
-If you have your PostgreSQL database server running and credentials set up in `.env`, run:
-```bash
-# Push schema migrations
+# Build / Push database tables and run migration
 npm run prisma:migrate --name init_schema
 
-# Seed initial system database rows
+# Seed initial admin account
 npm run prisma:seed
 ```
-*Note: If your local database is not yet running, the server will log a database warning on boot but will remain alive for UI and frontend development.*
 
-### 5. Running the Development Servers
-Start both the React client and Express server concurrently from the **workspace root**:
+### 4. Running the Development Servers
+Run both client and server concurrently from the root directory:
 ```bash
 npm run dev
 ```
-- **Client (Vite)**: runs at [http://localhost:3000](http://localhost:3000)
+- **Client (Vite)**: runs at [http://localhost:3000](http://localhost:3000) (requests proxies automatically to the server)
 - **Server (Express)**: runs at [http://localhost:5000](http://localhost:5000)
 
 ---
@@ -101,7 +95,7 @@ npm run dev
 ├── client/                 # React Frontend
 │   ├── src/
 │   │   ├── app/            # Global state stores
-│   │   ├── features/       # Feature-based pages/controllers (17 modules)
+│   │   ├── features/       # Feature-based pages/controllers (16 modules)
 │   │   ├── layouts/        # Layout definitions (Main, Auth)
 │   │   └── styles/         # Tailwind CSS v4 stylesheets
 ├── server/                 # Express Backend
@@ -109,7 +103,7 @@ npm run dev
 │   ├── src/
 │   │   ├── config/         # System settings (env, passport, database)
 │   │   ├── middlewares/    # Security, auth, and validation filters
-│   │   ├── modules/        # Modular router services (17 modules)
+│   │   ├── modules/        # Modular router services (16 modules)
 │   │   └── routes/         # Unified router mapping (v1 & v2 structure)
 │   └── tests/              # Jest test cases (unit, integration, e2e)
 ├── docs/                   # System design, API details, database models
@@ -118,15 +112,14 @@ npm run dev
 
 ---
 
-## 📜 Development Scripts Checklist (Run at Root)
+## 📜 Development Scripts Checklist
 
-| Command | Description |
-| :--- | :--- |
-| `npm run dev` | Run frontend and backend servers concurrently |
-| `npm run build` | Build production bundles for both client & server |
-| `npm run lint` | Run ESLint checks across client and server |
-| `npm run format` | Format files using Prettier |
-| `npm run prisma:generate` | Regenerate Prisma Client declarations |
-| `npm run prisma:migrate` | Run PostgreSQL migration scripts |
-| `npm run prisma:seed` | Seed database with initial setup data |
-| `npm test` | Run server unit and integration test suites |
+| Command | Workspace | Description |
+| :--- | :--- | :--- |
+| `npm run dev` | Root | Run frontend and backend servers concurrently |
+| `npm run build` | Root | Build production bundles for both client & server |
+| `npm run lint` | Root | Run ESLint checks across client and server |
+| `npm run format` | Root | Format files using Prettier |
+| `npm run prisma:generate` | Server | Regenerate Prisma Client declarations |
+| `npm run prisma:migrate` | Server | Run PostgreSQL migration scripts |
+| `npm run prisma:seed` | Server | Seed database with initial setup data |
