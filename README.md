@@ -1,58 +1,78 @@
 # AssetFlow - Enterprise Asset & Resource Management System
 
-AssetFlow is a clean-architecture Enterprise Asset & Resource Management System designed for the **Odoo All India Hackathon**. This project establishes an enterprise-grade scaffolding featuring a modular backend architecture and a feature-based frontend layout.
+AssetFlow is a centralized Enterprise Resource Planning (ERP) platform designed to simplify, automate, and track the full lifecycle of physical assets and shared resources within any organization. The system enforces role-based access control, conflict handling, and structured approval workflows.
 
 ---
 
-## 👥 Developers Team
+## Problem & Solution
 
-- **Ashish Gokani** — Lead Backend Architect: Designed and implemented complete backend architecture, REST APIs, JWT authentication, role-based access control, and database schema with Prisma ORM.
-- **Ashish Vekariya** — Full Stack Engineer: Built API integrations, middleware layers, validation schemas, and connected frontend with backend services.
-- **Krish Solanki** —  Frontend UI/UX Engineer: Designed Apple & Cuberto-inspired UI with Figma, implemented Framer Motion & GSAP animations, Tailwind CSS styling, and responsive layouts across 16 modules
-- **Harmin Vekariya** — DevOps & Database Administrator: Managed PostgreSQL database setup, Prisma migrations, deployment pipelines, and cloud infrastructure configuration.
+### The Problem
+Organizations face significant administrative overhead, high replacement costs, and operational friction due to poor tracking of physical assets and shared resources:
+- **Manual Overhead & Errors**: Reliance on spreadsheets, paper logs, or decentralized emails leads to data duplication and lack of real-time status.
+- **Double Allocations**: Lack of real-time control allows multiple staff members to claim the same device, causing scheduling conflicts and lost productivity.
+- **Resource Overlaps**: Shared assets, such as meeting rooms or project vehicles, suffer booking overlaps and lack validation.
+- **Untracked Maintenance**: Maintenance requests are handled ad-hoc without formal manager approval or technician assignment, leading to unrecorded repairs.
+- **Inadequate Audits**: Discrepancies between physical inventory and system records go unnoticed without audit cycles and discrepancy reports.
+
+### The Solution: AssetFlow
+AssetFlow addresses these challenges through a centralized system focusing on ERP workflows:
+- **Centralized Master Data**: Provides structured modules for locations, asset categories, and departments to organize all organizational resources.
+- **Conflict-Handling Allocations**: The system prevents double-allocations. If a resource is already allocated, the system blocks the action and provides a **Transfer Request** workflow to hand over ownership cleanly.
+- **Time-Slot Resource Booking**: Real-time calendar schedule validation rejects booking requests that overlap with existing bookings.
+- **Authorized Maintenance Workflows**: Repair tickets route from `Pending` through `Approved`, flipping the asset to `Under Maintenance` and then back to `Available` upon resolution.
+- **Scheduled Audits**: Enables administrators to define location/department-specific audit cycles, assign auditors, flag discrepancies, and update the database accordingly upon closing the cycle.
 
 ---
 
-## 🛠️ Tech Stack & Key Technologies
+## Tech Stack & Key Technologies Used
 
 ### Frontend (Client)
-- **Framework**: React (Vite-powered, JavaScript)
-- **Styling**: Tailwind CSS v4 (native CSS configuration, custom variables)
-- **State Management**: Redux Toolkit (global feature slice registry)
-- **Routing**: React Router DOM (protected layout-based layouts)
-- **Data Fetching**: Axios & React Query (cached server states)
-- **Form Handling & Validation**: React Hook Form & Zod
-- **Visuals & UI**: Lucide React (Icons), Recharts (Analytics charts), Framer Motion (Animations), React Hot Toast (Toasts)
-- **Utility**: DayJS (Time manipulation)
+- **Framework**: React.js with Vite
+- **Styling**: Tailwind CSS
+- **State Management**: Redux Toolkit & React Redux
+- **API Client**: Axios
+- **Routing**: React Router DOM
+- **Forms**: React Hook Form with Zod Resolvers
+- **Visuals & Charts**: Lucide React, Recharts
 
 ### Backend (Server)
-- **Runtime**: Node.js & Express.js (Modular router mapping)
-- **Database Layer**: PostgreSQL & Prisma ORM (Type-safe client)
-- **Security**: Passport Google OAuth, JWT with refresh tokens inside HttpOnly cookies, Helmet, CORS, Express Rate Limit, bcrypt
-- **Middlewares**: Compression, Morgan (logging), Multer & Cloudinary (File processing)
+- **Runtime**: Node.js & Express.js
+- **Database Layer**: PostgreSQL & Prisma ORM
+- **Security & Authentication**: JSON Web Tokens (JWT), Passport.js (Local & Google OAuth 2.0), bcryptjs
+- **Validation**: Zod
 
 ---
 
+## Key Features
 
+1. **Dashboard & KPIs**: View current operational metrics (assets available, allocated, pending transfers, upcoming returns, and active bookings) with quick action shortcuts.
+2. **Realistic Authentication**: Secure signup and login flow. Default registrations create employee accounts; Admin promotes employees to Department Heads or Asset Managers in the Directory.
+3. **Organization Setup (Admin Only)**:
+   - **Department Management**: Establish corporate departments, assign parent associations, and select heads.
+   - **Asset Category Management**: Create hardware categories and assign custom attributes.
+   - **Employee Directory**: Manage roles, statuses, and profiles.
+4. **Asset Registry**: Track assets with auto-generated tags, upload documentation/photos, search and filter by category/location, and view complete history logs.
+5. **Asset Allocation & Transfers**: Assign assets to employees or departments. Submit and track transfer requests.
+6. **Resource Booking**: Reserve shared resources by selecting time slots with conflict-checking.
+7. **Maintenance Management**: Log tickets with priority, description, and status.
+8. **Structured Asset Audits**: Run location/department audits, assign auditors, and auto-generate discrepancy reports.
 
-## 📋 Prerequisites
-- **Node.js**: `v20.x` or higher
-- **npm**: `v10.x` or higher
+---
+
+## Local Setup & Installation
+
+### Prerequisites
+- **Node.js**: `v18.x` or higher
 - **PostgreSQL**: Local running instance or cloud database
 
----
-
-## 🚀 Installation & Local Setup
-
-### 1. Initialize and install dependencies
+### 1. Install Dependencies
 At the root workspace directory, run:
 ```bash
 npm install
 ```
-This automatically bootstraps and installs all shared, backend, and frontend dependencies utilizing **npm workspaces**.
 
 ### 2. Configure Environment Variables
-Copy env files to configure secrets, connections, and API paths:
+Copy template configuration files:
 ```bash
 # Copy root env layout
 cp .env.example .env
@@ -63,32 +83,32 @@ cp client/.env.example client/.env
 # Copy server env configuration
 cp server/.env.example server/.env
 ```
-Ensure you set your database access string under `DATABASE_URL` in `server/.env`.
+Ensure the connection string is correctly defined in `DATABASE_URL` in `server/.env`.
 
-### 3. Initialize Prisma Database Client
-Prepare the PostgreSQL database connection and run schema code generation:
+### 3. Initialize Database
+Prepare the PostgreSQL database and run schema generation:
 ```bash
 # Generate Prisma Client
 npm run prisma:generate
 
-# Build / Push database tables and run migration
-npm run prisma:migrate --name init_schema
+# Push schema to database
+npm run prisma:push
 
-# Seed initial admin account
+# Seed initial database records
 npm run prisma:seed
 ```
 
 ### 4. Running the Development Servers
-Run both client and server concurrently from the root directory:
+Run both client and server concurrently:
 ```bash
 npm run dev
 ```
-- **Client (Vite)**: runs at [http://localhost:3000](http://localhost:3000) (requests proxies automatically to the server)
+- **Client (Vite)**: runs at [http://localhost:3000](http://localhost:3000)
 - **Server (Express)**: runs at [http://localhost:5000](http://localhost:5000)
 
 ---
 
-## 📂 Project Architecture
+## Project Architecture
 
 ```
 / (Workspace Root)
@@ -97,7 +117,7 @@ npm run dev
 │   │   ├── app/            # Global state stores
 │   │   ├── features/       # Feature-based pages/controllers (16 modules)
 │   │   ├── layouts/        # Layout definitions (Main, Auth)
-│   │   └── styles/         # Tailwind CSS v4 stylesheets
+│   │   └── styles/         # Tailwind CSS stylesheets
 ├── server/                 # Express Backend
 │   ├── prisma/             # Schema definitions and database seeds
 │   ├── src/
@@ -106,20 +126,15 @@ npm run dev
 │   │   ├── modules/        # Modular router services (16 modules)
 │   │   └── routes/         # Unified router mapping (v1 & v2 structure)
 │   └── tests/              # Jest test cases (unit, integration, e2e)
-├── docs/                   # System design, API details, database models
-└── scripts/                # Scaffolding and build scripts
 ```
 
 ---
 
-## 📜 Development Scripts Checklist
+## Developers Team
 
-| Command | Workspace | Description |
+| Developer Name | Role | Responsibilities |
 | :--- | :--- | :--- |
-| `npm run dev` | Root | Run frontend and backend servers concurrently |
-| `npm run build` | Root | Build production bundles for both client & server |
-| `npm run lint` | Root | Run ESLint checks across client and server |
-| `npm run format` | Root | Format files using Prettier |
-| `npm run prisma:generate` | Server | Regenerate Prisma Client declarations |
-| `npm run prisma:migrate` | Server | Run PostgreSQL migration scripts |
-| `npm run prisma:seed` | Server | Seed database with initial setup data |
+| **Ashish Gokani** | Full Stack | Architecture design, API development, state management, and Prisma integration |
+| **Harmin Vekariya** | Full Stack | UI/UX implementation, routing, database management, and deployment pipelines |
+| **Ashish Vekariya** | Backend | Core API logic, validation schemas, secure authentication, and middleware configuration |
+| **Krish Solanki** | Frontend | Responsive styling, Framer Motion/custom animations, form validation, and dashboards |
