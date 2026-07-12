@@ -157,12 +157,17 @@ model Allocation {
   allocatedBy        User       @relation("ManagerAllocations", fields: [allocatedById], references: [id])
   expectedReturnDate DateTime?
   actualReturnDate   DateTime?
-  status             String     @default("ACTIVE") // ACTIVE, RETURNED, OVERDUE
+  status             AllocationStatus @default(ACTIVE)
   checkInNotes       String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
   @@map("allocations")
+}
+
+enum AllocationStatus {
+  ACTIVE
+  RETURNED
 }
 
 model TransferRequest {
