@@ -1,8 +1,11 @@
 const dotenv = require('dotenv');
 const { z } = require('zod');
 
-// Load environment variables
+const path = require('path');
+
+// Load environment variables (local server or root workspace fallback)
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),

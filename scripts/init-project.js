@@ -24,6 +24,7 @@ const modules = [
   'notifications',
   'reports',
   'settings',
+  'logs',
 ];
 
 // Helper to make directory

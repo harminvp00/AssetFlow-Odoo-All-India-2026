@@ -17,6 +17,7 @@ import {
   BarChart3,
   Settings as SettingsIcon,
   LogOut,
+  History,
 } from 'lucide-react';
 
 function MainLayout() {
@@ -38,6 +39,7 @@ function MainLayout() {
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
+    { name: 'Activity Logs', href: '/logs', icon: History },
   ];
 
   return (

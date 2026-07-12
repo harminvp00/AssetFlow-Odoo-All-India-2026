@@ -82,6 +82,7 @@ function App() {
         <Route path="/notifications" element={<FallbackPage name="Notifications" />} />
         <Route path="/reports" element={<FallbackPage name="Reports" />} />
         <Route path="/settings" element={<FallbackPage name="Settings" />} />
+        <Route path="/logs" element={<FallbackPage name="Activity Logs" />} />
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
