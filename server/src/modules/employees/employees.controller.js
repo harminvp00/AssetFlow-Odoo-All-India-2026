@@ -15,13 +15,13 @@ const getAll = async (req, res, next) => {
   }
 };
 
-const create = async (req, res, next) => {
+const promote = async (req, res, next) => {
   try {
-    const newItem = await service.create(req.body);
-    res.status(201).json({
+    const updatedItem = await service.update(req.params.id, req.body);
+    res.json({
       success: true,
-      message: messages.SUCCESS_CREATED,
-      data: mapper.toDTO(newItem),
+      message: messages.SUCCESS_PROMOTED,
+      data: mapper.toDTO(updatedItem),
     });
   } catch (error) {
     next(error);
@@ -30,5 +30,5 @@ const create = async (req, res, next) => {
 
 module.exports = {
   getAll,
-  create,
+  promote,
 };

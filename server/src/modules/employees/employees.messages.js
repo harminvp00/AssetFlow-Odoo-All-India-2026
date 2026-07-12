@@ -1,5 +1,5 @@
 module.exports = {
-  SUCCESS_RETRIEVED: 'Employees entries retrieved successfully.',
-  SUCCESS_CREATED: 'Employees created successfully.',
-  ERROR_NOT_FOUND: 'Employees entry not found.',
+  SUCCESS_RETRIEVED: 'Employee directory retrieved successfully.',
+  SUCCESS_PROMOTED: 'Employee details updated successfully.',
+  ERROR_NOT_FOUND: 'Employee not found.',
 };

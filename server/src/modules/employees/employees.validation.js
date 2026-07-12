@@ -1,12 +1,15 @@
 const { z } = require('zod');
 
-const create = z.object({
+const promote = z.object({
   body: z.object({
-    // Basic validation schema
-    name: z.string().min(1, 'Name is required'),
+    role: z.enum(['ADMIN', 'MANAGER', 'DEPARTMENT_HEAD', 'EMPLOYEE'], {
+      required_error: 'Role is required',
+    }),
+    departmentId: z.string().uuid().nullable().optional(),
+    status: z.boolean().optional(),
   }),
 });
 
 module.exports = {
-  create,
+  promote,
 };
